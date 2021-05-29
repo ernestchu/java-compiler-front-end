@@ -10,7 +10,6 @@
 %{
     #include <stdio.h>
     #include <string.h>
-    #include "SymbolTable.h"
 
     typedef char* string;
     unsigned num_chars = 1, num_ids = 0, num_lines = 1;
@@ -60,12 +59,8 @@ EOL         \n
 
 %%
 
-int main() {
-    if (create()==-1) perror("malloc");
-    yylex();
-    dump();
-    destroy();
-    return 0;
+int yywrap() {
+    return 1;
 }
 
 void stamp(const string s) {
@@ -75,8 +70,6 @@ void stamp(const string s) {
     printf(" %-10s is %s\n", ticked, s);
     num_chars += yyleng;
     free(ticked);
-    if (!strcmp("an ID", s))
-        insert(yytext);
 }
 
 void stamp_comment(string s) {
