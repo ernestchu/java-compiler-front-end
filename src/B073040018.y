@@ -512,6 +512,7 @@ string_literal		: STR_LIT
 			;
 null_literal		: NULL_LIT
 			;
+/*
 keyword			: ABSTRACT | BOOLEAN | BREAK | BYTE | CASE | CATCH | CHAR | CLASS | CONST 
 			| CONTINUE | DEFAULT | DO | DOUBLE | ELSE | EXTENDS | FINAL | FINALLY 
 			| FLOAT | FOR | GOTO | IF | IMPLEMENTS | IMPORT | INSTANCEOF | INT 
@@ -519,6 +520,7 @@ keyword			: ABSTRACT | BOOLEAN | BREAK | BYTE | CASE | CATCH | CHAR | CLASS | CO
 			| RETURN | SHORT | STATIC | SUPER | SWITCH | SYNCHRONIZED | THIS | THROW 
 			| THROWS | TRANSIENT | TRY | VOID | VOLATILE | WHILE
 			;
+*/
 identifier		: ID
 %%
 
