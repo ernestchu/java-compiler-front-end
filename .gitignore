@@ -1,1 +1,5 @@
 .DS_Store
+JavaCompiler
+lex.yy.c
+y.tab.c
+y.tab.h

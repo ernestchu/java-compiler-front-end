@@ -11,7 +11,7 @@ STT  = SymbolTable/SymbolTable# Symbol table target
 EXEC = JavaCompiler
 
 .PHONY: all
-all: $(LEX).c $(YACC).c $(STT).c
+all: clean $(LEX).c $(YACC).c $(STT).c
 	$(CC) $(CCF) $(YACC).c -o $(EXEC)
 
 $(LEX).c: $(LT).l $(YACC).h

@@ -113,7 +113,6 @@ while	    	{ yylval=strdup(yytext); num_chars+=yyleng; return WHILE;        }
 "||"            { yylval=strdup(yytext); num_chars+=yyleng; return OR;  	 }
 "!"             { yylval=strdup(yytext); num_chars+=yyleng; return NOT; 	 }
 
-
 [&|^~*/%+\-?:.{}[\](),;]    { yylval=strdup(yytext); num_chars++; return *yytext;	      }
 [0-9]			    { yylval=strdup(yytext); num_chars++; return *yytext; 	      }
 
