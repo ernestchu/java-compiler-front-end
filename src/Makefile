@@ -1,16 +1,18 @@
-CC  = gcc# C compiler
-CCF = -Wall# C compiler flag
-LL  = -ll# link lib
-LEXD = Scanner# Lex directory
+CC   = gcc# C compiler
+LC   = flex# Lex compiler
+YC   = bison# Yacc compiler
+CCF  = -Wall# C compiler flag
+LL   = -ll# link lib
+LT   = B073040018# Lex target
+YT   = B073040018# Yacc target
 LEX  = lex.yy# Lex output
+YACC = y.tab# Yacc output
 
-all: clean $(LEX).c
+all: $(LEX).c
 
 $(LEX).c:
-	$(MAKE) -wC $(LEXD)
-	cp $(LEXD)/$(LEX).c .
+	$(LC) $(LT).l
 
 clean:
-	$(MAKE) -wC $(LEXD) clean
 	rm -f $(LEX).c
 
