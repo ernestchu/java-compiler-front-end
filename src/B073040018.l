@@ -8,8 +8,10 @@
  */
 
 %{
+    #define YYSTYPE char*
     #include <stdio.h>
     #include <string.h>
+    #include "y.tab.h"
 
     unsigned num_chars = 1, num_lines = 1;
 %}
