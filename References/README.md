@@ -6,5 +6,6 @@ The PDFs in the same directory are extracted from **Compilers: Principles, Techn
 - [Lex](./Lex.pdf)
 - [Yacc](./Yacc.pdf)
 - [The Lex & Yacc Page](http://dinosaur.compilertools.net)
+- [JAVA BNF](https://cs.au.dk/~amoeller/RegAut/JavaBNF.html)
 
 ![](./textbook-cover.jpg)
