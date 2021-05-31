@@ -18,19 +18,19 @@
 
 boolean_literal		true|false
 null_literal		null
-integer_type_suffix	[lL]
-float_type_suffix	[fFdD]
-hex_indicator		[xX]
-exponent_indicator	[eE]
-identifier		([a-zA-Z_$])([a-zA-Z0-9_$])*
-single_character_wo_sp	[^\"\\\n \t]
 escape_sequence		\\[tbnrf\'\"\\]
+single_character	[^\'\\\n]|{escape_sequence}
+char_literal		\'{single_character}\'
+string_character	[^\"\\\n]|{escape_sequence}
+string_literal		\"{string_character}*\"
+integer_type_suffix	[lL]
+hex_indicator		[xX]
+identifier		([a-zA-Z_$])([a-zA-Z0-9_$])*
 comment			(\/\/.*\n)|(\/\*([^\*]|\*+[^\*\/])*\*+\/)
 space			[ \t]
 EOL			\n
 
 %%
-
 
 abstract	{ /* keyward */
                   yylval=strdup(yytext); num_chars+=yyleng; return ABSTRACT;     }
@@ -62,7 +62,7 @@ interface	{ yylval=strdup(yytext); num_chars+=yyleng; return INTERFACE;    }
 long		{ yylval=strdup(yytext); num_chars+=yyleng; return LONG;         }
 native		{ yylval=strdup(yytext); num_chars+=yyleng; return NATIVE;       }
 new		{ yylval=strdup(yytext); num_chars+=yyleng; return NEW;          }
-pacakage	{ yylval=strdup(yytext); num_chars+=yyleng; return PACAKAGE;     }
+package		{ yylval=strdup(yytext); num_chars+=yyleng; return PACKAGE;      }
 private		{ yylval=strdup(yytext); num_chars+=yyleng; return PRIVATE;      }
 protected	{ yylval=strdup(yytext); num_chars+=yyleng; return PROTECTED;    }
 public		{ yylval=strdup(yytext); num_chars+=yyleng; return PUBLIC;       }
@@ -114,18 +114,16 @@ while	    	{ yylval=strdup(yytext); num_chars+=yyleng; return WHILE;        }
 "!"             { yylval=strdup(yytext); num_chars+=yyleng; return NOT; 	 }
 
 [&|^~*/%+\-?:.{}[\](),;]    { yylval=strdup(yytext); num_chars++; return *yytext;	      }
-[0-9]			    { yylval=strdup(yytext); num_chars++; return *yytext; 	      }
+[0-9a-fA-F]		    { yylval=strdup(yytext); num_chars++; return *yytext; 	      }
 
-{boolean_literal}	    { /* misc */
+{boolean_literal}	    { /* literal and misc */
 			      yylval=strdup(yytext); num_chars+=yyleng; return BOOL_LIT;      }
 {null_literal}		    { yylval=strdup(yytext); num_chars+=yyleng; return NULL_LIT;      }
+{char_literal}		    { yylval=strdup(yytext); num_chars+=yyleng; return CHAR_LIT;      }
+{string_literal}	    { yylval=strdup(yytext); num_chars+=yyleng; return STR_LIT;       }
 {integer_type_suffix}	    { yylval=strdup(yytext); num_chars+=yyleng; return INT_SUF;	      }
-{float_type_suffix}	    { yylval=strdup(yytext); num_chars+=yyleng; return FLT_SUF;	      }
 {hex_indicator}		    { yylval=strdup(yytext); num_chars+=yyleng; return HEX_INDI;      }
-{exponent_indicator}	    { yylval=strdup(yytext); num_chars+=yyleng; return EXP_INDI;      }
 {identifier}		    { yylval=strdup(yytext); num_chars+=yyleng; return ID;	      }
-{single_character_wo_sp}    { yylval=strdup(yytext); num_chars+=yyleng; return SING_CH_WO_SP; }
-{escape_sequence}	    { yylval=strdup(yytext); num_chars+=yyleng; return ESC;	      }
 {comment}		    {
 			      unsigned int len, i, contain_eol=0;
 			      for (len=0, i=1; yytext[i+1]; len++, i++) {
