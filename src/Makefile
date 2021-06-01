@@ -10,10 +10,10 @@ YT    = B073040018# Yacc target
 LEX   = lex.yy# Lex output
 YACC  = y.tab# Yacc output
 STT   = SymbolTable/SymbolTable# Symbol table target
-EXEC  = JavaCompiler
+EXEC  = JavaParser
 
 ifeq ($(DEBUG), 1) 
-	YCF = -dvy
+	YCF = -dy
 endif
 ifeq ($(DEBUG), 2) 
 	YCF = -dtvy
@@ -31,5 +31,5 @@ $(YACC).h: $(YT).y
 
 .PHONY: clean
 clean:
-	rm -f $(LEX).c $(YACC).* y.output
+	rm -f $(EXEC) $(LEX).c $(YACC).* y.output
 

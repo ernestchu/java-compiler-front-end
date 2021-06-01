@@ -24,7 +24,8 @@
 %}
 
 
-%token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_SUF HEX_INDI ID 
+
+%token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_LIT FLT_LIT ID
 
 %right ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS
 %right '?' ':'
@@ -463,62 +464,17 @@ literal			: integer_literal
 			| string_literal 
 			| null_literal
 			;
-integer_literal		: decimal_integer_literal 
-			| hex_integer_literal 
-			| octal_integer_literal
-			;
-decimal_integer_literal : decimal_numeral integer_type_suffix_opt
-			;
-hex_integer_literal	: hex_numeral integer_type_suffix_opt
-			;
-octal_integer_literal	: octal_numeral integer_type_suffix_opt
-			;
-integer_type_suffix	: INT_SUF
-			;
-decimal_numeral		: '0' 
-			| non_zero_digit digits_opt
-			;
-digits			: digit
-			| digits digit
-			;
-digit			: '0' 
-			| non_zero_digit
-			;
-non_zero_digit		: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-			;
-hex_numeral		: '0' HEX_INDI hex_digit 
-			| hex_numeral hex_digit
-			;
-hex_digit		: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' 
-			| 'a' | 'b' | 'c' | 'd' | 'e' | 'f' 
-			| 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
-			;
-octal_numeral		: '0' octal_digit 
-			| octal_numeral octal_digit
-			;
-octal_digit		: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7'
-			;
-floating_point_literal	: digits '.' digits_opt exponent_part_opt float_type_suffix_opt
-		        | '.' digits exponent_part_opt float_type_suffix_opt
-			;
-exponent_part		: exponent_indicator signed_integer
-			;
-exponent_indicator	: 'e' | 'E'
-			;
-signed_integer		: sign_opt digits
-			;
-sign			: '+' %prec UMINUS
-			| '-' %prec UMINUS 
-			;
-float_type_suffix	: 'f' | 'F' | 'd' | 'D'
-			;
 boolean_literal		: BOOL_LIT 
+			;
+null_literal		: NULL_LIT
 			;
 character_literal	: CHAR_LIT
 			;
 string_literal		: STR_LIT
 			;
-null_literal		: NULL_LIT
+integer_literal		: INT_LIT
+			;
+floating_point_literal  : FLT_LIT
 			;
 identifier		: ID
 			;
@@ -530,26 +486,21 @@ catches_opt : catches | /* empty */ ;
 class_body_declarations_opt : class_body_declarations | /* empty */ ;
 class_modifiers_opt : class_modifiers | /* empty */ ;
 constructor_modifiers_opt : constructor_modifiers | /* empty */ ;
-digits_opt : digits | /* empty */ ;
 dims_opt : dims | /* empty */ ;
 explicit_constructor_invocation_opt : explicit_constructor_invocation | /* empty */ ;
-exponent_part_opt : exponent_part | /* empty */ ;
 expression_opt : expression | /* empty */ ;
 extends_interfaces_opt : extends_interfaces | /* empty */ ;
 field_modifiers_opt : field_modifiers | /* empty */ ;
-float_type_suffix_opt : float_type_suffix | /* empty */ ;
 for_init_opt : for_init | /* empty */ ;
 for_update_opt : for_update | /* empty */ ;
 formal_parameter_list_opt : formal_parameter_list | /* empty */ ;
 identifier_opt : identifier | /* empty */ ;
 import_declarations_opt : import_declarations | /* empty */ ;
-integer_type_suffix_opt : integer_type_suffix | /* empty */ ;
 interface_member_declarations_opt : interface_member_declarations | /* empty */ ;
 interface_modifiers_opt : interface_modifiers | /* empty */ ;
 interfaces_opt : interfaces | /* empty */ ;
 method_modifiers_opt : method_modifiers | /* empty */ ;
 package_declaration_opt : package_declaration | /* empty */ ;
-sign_opt : sign | /* empty */ ;
 super_opt : super | /* empty */ ;
 switch_block_statement_groups_opt : switch_block_statement_groups | /* empty */ ;
 switch_labels_opt : switch_labels | /* empty */ ;
@@ -560,11 +511,21 @@ variable_initializers_opt : variable_initializers | /* empty */ ;
 %%
 
 int main() {
+    if (DEBUG == 1)
+	fprintf(stderr, "%6u  ", 1);
     yyparse();
+
     return 0;
 }
 
 void yyerror() {
-    fprintf(stderr, "syntax error at %3d:%-3d", num_lines, num_chars);
-    fprintf(stderr, " %-10s\n", yytext);
+    fprintf(stderr, "\033[1m");
+    fprintf(stderr, "\n%6u:%u: ", num_lines, num_chars);
+    fprintf(stderr, "\033[0;31m");
+    fprintf(stderr, "\033[1m");
+    fprintf(stderr, "syntax error: ");
+    fprintf(stderr, "\033[0m");
+    fprintf(stderr, "\033[1m");
+    fprintf(stderr, "parsing error: `%s`", yytext);
+    fprintf(stderr, "\033[22m");
 };
