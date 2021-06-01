@@ -14,6 +14,7 @@
     #include "y.tab.h"
 
     unsigned num_chars = 1, num_lines = 1;
+    void handler(void);
 %}
 
 boolean_literal		true|false
@@ -33,103 +34,107 @@ EOL			\n
 %%
 
 abstract	{ /* keyward */
-                  yylval=strdup(yytext); num_chars+=yyleng; return ABSTRACT;     }
-boolean		{ yylval=strdup(yytext); num_chars+=yyleng; return BOOLEAN;      }
-break		{ yylval=strdup(yytext); num_chars+=yyleng; return BREAK;        }
-byte		{ yylval=strdup(yytext); num_chars+=yyleng; return BYTE;         }
-case		{ yylval=strdup(yytext); num_chars+=yyleng; return CASE;         }
-catch		{ yylval=strdup(yytext); num_chars+=yyleng; return CATCH;        }
-char		{ yylval=strdup(yytext); num_chars+=yyleng; return CHAR;         }
-class		{ yylval=strdup(yytext); num_chars+=yyleng; return CLASS;        }
-const		{ yylval=strdup(yytext); num_chars+=yyleng; return CONST;        }
-continue	{ yylval=strdup(yytext); num_chars+=yyleng; return CONTINUE;     }
-default		{ yylval=strdup(yytext); num_chars+=yyleng; return DEFAULT;      }
-do		{ yylval=strdup(yytext); num_chars+=yyleng; return DO;           }
-double		{ yylval=strdup(yytext); num_chars+=yyleng; return DOUBLE;       }
-else		{ yylval=strdup(yytext); num_chars+=yyleng; return ELSE;         }
-extends		{ yylval=strdup(yytext); num_chars+=yyleng; return EXTENDS;      }
-final		{ yylval=strdup(yytext); num_chars+=yyleng; return FINAL;        }
-finally		{ yylval=strdup(yytext); num_chars+=yyleng; return FINALLY;      }
-float		{ yylval=strdup(yytext); num_chars+=yyleng; return FLOAT;        }
-for		{ yylval=strdup(yytext); num_chars+=yyleng; return FOR;          }
-goto		{ yylval=strdup(yytext); num_chars+=yyleng; return GOTO;         }
-if		{ yylval=strdup(yytext); num_chars+=yyleng; return IF;           }
-implements	{ yylval=strdup(yytext); num_chars+=yyleng; return IMPLEMENTS;   }
-import		{ yylval=strdup(yytext); num_chars+=yyleng; return IMPORT;       }
-instanceof	{ yylval=strdup(yytext); num_chars+=yyleng; return INSTANCEOF;   }
-int		{ yylval=strdup(yytext); num_chars+=yyleng; return INT;          }
-interface	{ yylval=strdup(yytext); num_chars+=yyleng; return INTERFACE;    }
-long		{ yylval=strdup(yytext); num_chars+=yyleng; return LONG;         }
-native		{ yylval=strdup(yytext); num_chars+=yyleng; return NATIVE;       }
-new		{ yylval=strdup(yytext); num_chars+=yyleng; return NEW;          }
-package		{ yylval=strdup(yytext); num_chars+=yyleng; return PACKAGE;      }
-private		{ yylval=strdup(yytext); num_chars+=yyleng; return PRIVATE;      }
-protected	{ yylval=strdup(yytext); num_chars+=yyleng; return PROTECTED;    }
-public		{ yylval=strdup(yytext); num_chars+=yyleng; return PUBLIC;       }
-return		{ yylval=strdup(yytext); num_chars+=yyleng; return RETURN;       }
-short		{ yylval=strdup(yytext); num_chars+=yyleng; return SHORT;        }
-static		{ yylval=strdup(yytext); num_chars+=yyleng; return STATIC;       }
-super		{ yylval=strdup(yytext); num_chars+=yyleng; return SUPER;        }
-switch		{ yylval=strdup(yytext); num_chars+=yyleng; return SWITCH;       }
-synchronized    { yylval=strdup(yytext); num_chars+=yyleng; return SYNCHRONIZED; }
-this		{ yylval=strdup(yytext); num_chars+=yyleng; return THIS;         }
-throw	    	{ yylval=strdup(yytext); num_chars+=yyleng; return THROW;        }
-throws	    	{ yylval=strdup(yytext); num_chars+=yyleng; return THROWS;       }
-transient	{ yylval=strdup(yytext); num_chars+=yyleng; return TRANSIENT;    }
-try	        { yylval=strdup(yytext); num_chars+=yyleng; return TRY;          }
-void	    	{ yylval=strdup(yytext); num_chars+=yyleng; return VOID;         }
-volatile	{ yylval=strdup(yytext); num_chars+=yyleng; return VOLATILE;     }
-while	    	{ yylval=strdup(yytext); num_chars+=yyleng; return WHILE;        }
+                  handler(); return ABSTRACT;     }
+boolean		{ handler(); return BOOLEAN;      }
+break		{ handler(); return BREAK;        }
+byte		{ handler(); return BYTE;         }
+case		{ handler(); return CASE;         }
+catch		{ handler(); return CATCH;        }
+char		{ handler(); return CHAR;         }
+class		{ handler(); return CLASS;        }
+const		{ handler(); fprintf(stderr, "`const' is a keyword but not used\n"); }
+continue	{ handler(); return CONTINUE;     }
+default		{ handler(); return DEFAULT;      }
+do		{ handler(); return DO;           }
+double		{ handler(); return DOUBLE;       }
+else		{ handler(); return ELSE;         }
+extends		{ handler(); return EXTENDS;      }
+final		{ handler(); return FINAL;        }
+finally		{ handler(); return FINALLY;      }
+float		{ handler(); return FLOAT;        }
+for		{ handler(); return FOR;          }
+goto		{ handler(); fprintf(stderr, "`goto' is a keyword but not used\n"); }
+if		{ handler(); return IF;           }
+implements	{ handler(); return IMPLEMENTS;   }
+import		{ handler(); return IMPORT;       }
+instanceof	{ handler(); return INSTANCEOF;   }
+int		{ handler(); return INT;          }
+interface	{ handler(); return INTERFACE;    }
+long		{ handler(); return LONG;         }
+native		{ handler(); return NATIVE;       }
+new		{ handler(); return NEW;          }
+package		{ handler(); return PACKAGE;      }
+private		{ handler(); return PRIVATE;      }
+protected	{ handler(); return PROTECTED;    }
+public		{ handler(); return PUBLIC;       }
+return		{ handler(); return RETURN;       }
+short		{ handler(); return SHORT;        }
+static		{ handler(); return STATIC;       }
+super		{ handler(); return SUPER;        }
+switch		{ handler(); return SWITCH;       }
+synchronized    { handler(); return SYNCHRONIZED; }
+this		{ handler(); return THIS;         }
+throw	    	{ handler(); return THROW;        }
+throws	    	{ handler(); return THROWS;       }
+transient	{ handler(); return TRANSIENT;    }
+try	        { handler(); return TRY;          }
+void	    	{ handler(); return VOID;         }
+volatile	{ handler(); return VOLATILE;     }
+while	    	{ handler(); return WHILE;        }
 
-"*="            { /* assignment operator */
-                  yylval=strdup(yytext); num_chars+=yyleng; return MUL_ASS;	 }
-"/="            { yylval=strdup(yytext); num_chars+=yyleng; return DIV_ASS;	 }
-"%="            { yylval=strdup(yytext); num_chars+=yyleng; return MOD_ASS;	 }
-"+="            { yylval=strdup(yytext); num_chars+=yyleng; return ADD_ASS;	 }
-"-="            { yylval=strdup(yytext); num_chars+=yyleng; return SUB_ASS;	 }
-"<<="           { yylval=strdup(yytext); num_chars+=yyleng; return LS_ASS;	 }
-">>="           { yylval=strdup(yytext); num_chars+=yyleng; return RS_ASS;	 }
-">>>="          { yylval=strdup(yytext); num_chars+=yyleng; return URS_ASS;	 }
-"&="            { yylval=strdup(yytext); num_chars+=yyleng; return EMP_ASS;	 }
-"^="            { yylval=strdup(yytext); num_chars+=yyleng; return XOR_ASS;	 }
-"|="            { yylval=strdup(yytext); num_chars+=yyleng; return OR_ASS;	 }
+"="             { /* assignment operator */
+		  handler(); return ASS; 	 }
+"*="            { handler(); return MUL_ASS;	 }
+"/="            { handler(); return DIV_ASS;	 }
+"%="            { handler(); return MOD_ASS;	 }
+"+="            { handler(); return ADD_ASS;	 }
+"-="            { handler(); return SUB_ASS;	 }
+"<<="           { handler(); return LS_ASS;	 }
+">>="           { handler(); return RS_ASS;	 }
+">>>="          { handler(); return URS_ASS;	 }
+"&="            { handler(); return EMP_ASS;	 }
+"^="            { handler(); return XOR_ASS;	 }
+"|="            { handler(); return OR_ASS;	 }
 
 "<<"            { /* shift */
-                  yylval=strdup(yytext); num_chars+=yyleng; return LS;		 }
-">>"            { yylval=strdup(yytext); num_chars+=yyleng; return RS;  	 }
-">>>"           { yylval=strdup(yytext); num_chars+=yyleng; return URS; 	 }
+                  handler(); return LS;		 }
+">>"            { handler(); return RS;  	 }
+">>>"           { handler(); return URS; 	 }
 
 "=="            { /* relational operator (noted for `=`, for the sack of the longest match rule) */
-                  yylval=strdup(yytext); num_chars+=yyleng; return EQ;		 }
-"="             { yylval=strdup(yytext); num_chars+=yyleng; return ASS; 	 }
-"!="            { yylval=strdup(yytext); num_chars+=yyleng; return NE;  	 }
-"<="            { yylval=strdup(yytext); num_chars+=yyleng; return LE;  	 }
-">="            { yylval=strdup(yytext); num_chars+=yyleng; return GE;  	 }
-"<"             { yylval=strdup(yytext); num_chars+=yyleng; return LT;  	 }
-">"             { yylval=strdup(yytext); num_chars+=yyleng; return GT;  	 }
+                  handler(); return EQ;		 }
+"!="            { handler(); return NE;  	 }
+"<="            { handler(); return LE;  	 }
+">="            { handler(); return GE;  	 }
+"<"             { handler(); return LT;  	 }
+">"             { handler(); return GT;  	 }
 
 "&&"            { /* logical operator */
-                  yylval=strdup(yytext); num_chars+=yyleng; return AND;		 }
-"||"            { yylval=strdup(yytext); num_chars+=yyleng; return OR;  	 }
-"!"             { yylval=strdup(yytext); num_chars+=yyleng; return NOT; 	 }
+                  handler(); return AND;	 }
+"||"            { handler(); return OR;  	 }
+"!"             { handler(); return NOT; 	 }
 
-[&|^~*/%+\-?:.{}[\](),;]    { yylval=strdup(yytext); num_chars++; return *yytext;	      }
-[0-9a-fA-F]		    { yylval=strdup(yytext); num_chars++; return *yytext; 	      }
+"++"		{ /* increment/decrement */
+		  handler(); return INC;	 }
+"--"		{ handler(); return DEC;	 }
+
+[&|^~*/%+\-?:.{}[\](),;]    { handler(); return *yytext;	      }
+[0-9a-fA-F]		    { handler(); return *yytext; 	      }
 
 {boolean_literal}	    { /* literal and misc */
-			      yylval=strdup(yytext); num_chars+=yyleng; return BOOL_LIT;      }
-{null_literal}		    { yylval=strdup(yytext); num_chars+=yyleng; return NULL_LIT;      }
-{char_literal}		    { yylval=strdup(yytext); num_chars+=yyleng; return CHAR_LIT;      }
-{string_literal}	    { yylval=strdup(yytext); num_chars+=yyleng; return STR_LIT;       }
-{integer_type_suffix}	    { yylval=strdup(yytext); num_chars+=yyleng; return INT_SUF;	      }
-{hex_indicator}		    { yylval=strdup(yytext); num_chars+=yyleng; return HEX_INDI;      }
-{identifier}		    { yylval=strdup(yytext); num_chars+=yyleng; return ID;	      }
+			      handler(); return BOOL_LIT;      }
+{null_literal}		    { handler(); return NULL_LIT;      }
+{char_literal}		    { handler(); return CHAR_LIT;      }
+{string_literal}	    { handler(); return STR_LIT;       }
+{integer_type_suffix}	    { handler(); return INT_SUF;	      }
+{hex_indicator}		    { handler(); return HEX_INDI;      }
+{identifier}		    { handler(); return ID;	      }
 {comment}		    {
 			      unsigned int len, i, contain_eol=0;
-			      for (len=0, i=1; yytext[i+1]; len++, i++) {
+			      for (len=1, i=1; yytext[i]; len++, i++) {
 				  if (yytext[i]=='\n') {
 				      num_lines++;
-				      len=0;
+				      len=1;
 				      contain_eol = 1;
 				  }
 			      }
@@ -138,12 +143,12 @@ while	    	{ yylval=strdup(yytext); num_chars+=yyleng; return WHILE;        }
 			      else
 				  num_chars = len;
 			    }
-{space}			    { num_chars++; }
-{EOL}			    { num_chars=0; num_lines++; }
+{space}+		    { num_chars+=yyleng; }
+{EOL}			    { num_chars=1; num_lines++; }
 
 .			    {
-			      printf("%3d:%-3d", num_lines, num_chars);
-			      printf(" redundant character `%s`\n", yytext);
+			      fprintf(stderr, "%3d:%-3d", num_lines, num_chars);
+			      fprintf(stderr, " redundant character `%s`\n", yytext);
 			      num_chars += yyleng;
 			    }
 
@@ -154,3 +159,12 @@ int yywrap() {
     return 1;
 }
 #endif
+
+void handler(void) {
+    if (DEBUG == 1) {
+	fprintf(stderr, "%3d:%-3d", num_lines, num_chars);
+	fprintf(stderr, " %-10s\n", yytext);
+    }
+    yylval=strdup(yytext); 
+    num_chars+=yyleng;
+}

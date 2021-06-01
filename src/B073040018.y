@@ -4,21 +4,27 @@
  * Description: Syntatic & semantic parser for JAVA programming language
  * Reference:
  *      http://db.cse.nsysu.edu.tw/~changyi/slides/compiler/lab/Java.doc
+ *	https://cs.au.dk/~amoeller/RegAut/JavaBNF.html
  *	https://introcs.cs.princeton.edu/java/11precedence/
  */
 
 %{
     #define YYSTYPE char*
+    #ifndef DEBUG
+    #define DEBUG 0
+    #endif
     #include "SymbolTable/SymbolTable.h"
     #include "lex.yy.c"
     #include <stdio.h>
     
+    int yydebug = !!DEBUG;
+
     extern unsigned num_chars, num_lines;
     void yyerror();
 %}
 
 
-%token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONST CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR GOTO IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ ASS NE LE GE LT GT AND OR NOT BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_SUF HEX_INDI ID
+%token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_SUF HEX_INDI ID 
 
 %right ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS
 %right '?' ':'
@@ -33,16 +39,14 @@
 %left  '+' '-'
 %left  '*' '%' '/'
 %right CAST NEW
-%right PREINC PREDEC UPOS UNEG '!' '~'
+%right PREINC PREDEC UMINUS NOT '~'
 %nonassoc POSTINC POSTDEC
 %left  '[' ']' '.' '(' ')'
 
 %%
 
 /* Programs */
-goal			: compilation_unit
-			;
-compilation_unit	: package_declaration import_declarations type_declarations
+compilation_unit	: package_declaration_opt import_declarations_opt type_declarations_opt
 			;
 
 /* Declarations */
@@ -55,14 +59,17 @@ import_declaration	: single_type_import_declaration
 			| type_import_on_demand_declaration
 			;
 single_type_import_declaration : IMPORT type_name ';'
+			;
 type_import_on_demand_declaration : IMPORT package_name '.' '*' ';'
+			;
 type_declarations	: type_declaration 
 			| type_declarations type_declaration
+			;
 type_declaration	: class_declaration 
 			| interface_declaration 
 			| ';'
 			;
-class_declaration	: class_modifiers CLASS identifier super interfaces class_body
+class_declaration	: class_modifiers_opt CLASS identifier super_opt interfaces_opt class_body
 			;
 class_modifiers		: class_modifier 
 			| class_modifiers class_modifier
@@ -76,7 +83,7 @@ interfaces		: IMPLEMENTS interface_type_list
 interface_type_list	: interface_type 
 			| interface_type_list ',' interface_type
 			;
-class_body		: '{' class_body_declarations '}'
+class_body		: '{' class_body_declarations_opt '}'
 			;
 class_body_declarations : class_body_declaration 
 			| class_body_declarations class_body_declaration
@@ -90,14 +97,14 @@ class_member_declaration: field_declaration
 			;
 static_initializer	: STATIC block
 			;
-constructor_declaration : constructor_modifiers constructor_declarator throws constructor_body
+constructor_declaration : constructor_modifiers_opt constructor_declarator throws_opt constructor_body
 			;
 constructor_modifiers	: constructor_modifier 
 			| constructor_modifiers constructor_modifier
 			;
 constructor_modifier	: PUBLIC | PROTECTED | PRIVATE
 			;
-constructor_declarator	: simple_type_name '(' formal_parameter_list ')'
+constructor_declarator	: simple_type_name '(' formal_parameter_list_opt ')'
 			;
 formal_parameter_list	: formal_parameter | formal_parameter_list ',' formal_parameter
 			;
@@ -108,12 +115,12 @@ throws			: THROWS class_type_list
 class_type_list		: class_type 
 			| class_type_list ',' class_type
 			;
-constructor_body	: '{' explicit_constructor_invocation block_statements '}'
+constructor_body	: '{' explicit_constructor_invocation_opt block_statements_opt '}'
 			;
-explicit_constructor_invocation : THIS '(' argument_list ')' 
-			| SUPER '(' argument_list ')'
+explicit_constructor_invocation : THIS '(' argument_list_opt ')' 
+			| SUPER '(' argument_list_opt ')'
 			;
-field_declaration	: field_modifiers type variable_declarators ';'
+field_declaration	: field_modifiers_opt type variable_declarators ';'
 			;
 field_modifiers		: field_modifier 
 			| field_modifiers field_modifier
@@ -129,12 +136,9 @@ variable_declarator	: variable_declarator_id
 variable_declarator_id	: identifier 
 			| variable_declarator_id '[' ']'
 			;
-variable_initializer	: expression 
-			| array_initializer
-			;
 method_declaration	: method_header method_body
 			;
-method_header		: method_modifiers result_type method_declarator throws
+method_header		: method_modifiers_opt result_type method_declarator throws_opt
 			;
 result_type		: type 
 			| VOID
@@ -144,21 +148,23 @@ method_modifiers	: method_modifier
 			;
 method_modifier		: PUBLIC | PROTECTED | PRIVATE | STATIC | ABSTRACT | FINAL | SYNCHRONIZED | NATIVE
 			;
-method_declarator	: identifier '(' formal_parameter_list ')'
+method_declarator	: identifier '(' formal_parameter_list_opt ')'
 			;
 method_body		: block 
 			| ';'
 			;
-interface_declaration	: interface_modifiers INTERFACE identifier extends_interfaces interface_body
+interface_declaration	: interface_modifiers_opt INTERFACE identifier extends_interfaces_opt interface_body
 			;
 interface_modifiers	: interface_modifier 
 			| interface_modifiers interface_modifier
 			;
 interface_modifier	: PUBLIC | ABSTRACT
+			;
 extends_interfaces	: EXTENDS interface_type 
 			| extends_interfaces ',' interface_type
 			;
-interface_body		: '{' interface_member_declarations '}'
+interface_body		: '{' interface_member_declarations_opt '}'
+			;
 interface_member_declarations : interface_member_declaration 
 			| interface_member_declarations interface_member_declaration
 			;
@@ -169,14 +175,15 @@ constant_declaration	: constant_modifiers type variable_declarator
 			;
 constant_modifiers	: PUBLIC | STATIC | FINAL
 			;
-abstract_method_declaration : abstract_method_modifiers result_type method_declarator throws ';'
+abstract_method_declaration : abstract_method_modifiers result_type method_declarator throws_opt ';'
 			;
 abstract_method_modifiers : abstract_method_modifier 
 			| abstract_method_modifiers abstract_method_modifier
 			;
 abstract_method_modifier: PUBLIC | ABSTRACT
 			;
-array_initializer	: '{' variable_initializers ',' '}'
+array_initializer	: '{' variable_initializers_opt ',' '}'
+			| '{' variable_initializers_opt '}'
 			;
 variable_initializers	: variable_initializer 
 			| variable_initializers ',' variable_initializer
@@ -213,7 +220,7 @@ array_type		: type '[' ']'
 			;
 
 /* Blocks and Commands */
-block			: '{' block_statements '}'
+block			: '{' block_statements_opt '}'
 			;
 block_statements	: block_statement 
 			| block_statements block_statement 
@@ -260,7 +267,7 @@ if_then_else_statement_no_short_if : IF '(' expression ')' statement_no_short_if
 			;
 switch_statement	: SWITCH '(' expression ')' switch_block
 			;
-switch_block		: '{' switch_block_statement_groups switch_labels '}' 
+switch_block		: '{' switch_block_statement_groups_opt switch_labels_opt '}' 
 			;
 switch_block_statement_groups : switch_block_statement_group
 			| switch_block_statement_groups switch_block_statement_group
@@ -279,29 +286,30 @@ while_statement_no_short_if : WHILE '(' expression ')' statement_no_short_if
 			;
 do_statement		: DO statement WHILE '(' expression ')' ';'
 			;
-for_statement		: FOR '(' for_init ';' expression ';' for_update ')' statement
+for_statement		: FOR '(' for_init_opt ';' expression_opt ';' for_update_opt ')' statement
 			;
-for_statement_no_short_if : FOR '(' for_init ';' expression ';' for_update ')' statement_no_short_if
+for_statement_no_short_if : FOR '(' for_init_opt ';' expression_opt ';' for_update_opt ')' statement_no_short_if
 			;
 for_init		: statement_expression_list 
 			| local_variable_declaration
+			;
 for_update		: statement_expression_list
 			;
 statement_expression_list : statement_expression 
 			| statement_expression_list ',' statement_expression
 			;
-break_statement		: BREAK identifier ';'
+break_statement		: BREAK identifier_opt ';'
 			;
-continue_statement	: CONTINUE identifier ';'
+continue_statement	: CONTINUE identifier_opt ';'
 			;
-return_statement	: RETURN expression ';'
+return_statement	: RETURN expression_opt ';'
 			;
 throws_statement	: THROW expression ';'
 			;
 synchronized_statement  : SYNCHRONIZED '(' expression ')' block
 			;
 try_statement		: TRY block catches 
-			| TRY block catches finally
+			| TRY block catches_opt finally
 			;
 catches			: catch_clause 
 			| catches catch_clause
@@ -328,7 +336,7 @@ assignment_operator	: ASS	 | MUL_ASS | DIV_ASS | MOD_ASS | ADD_ASS | SUB_ASS
 			| LS_ASS | RS_ASS  | URS_ASS | EMP_ASS | XOR_ASS | OR_ASS
 			;
 conditional_expression	: conditional_or_expression
-			| conditional_or_expression expression ':' conditional_expression
+			| conditional_or_expression '?' expression ':' conditional_expression
 			;
 conditional_or_expression : conditional_and_expression 
 			| conditional_or_expression OR conditional_and_expression
@@ -337,7 +345,7 @@ conditional_and_expression : inclusive_or_expression
 			| conditional_and_expression AND inclusive_or_expression
 			;
 inclusive_or_expression : exclusive_or_expression 
-			| inclusive_or_expression 
+			| inclusive_or_expression '|' exclusive_or_expression
 			;
 exclusive_or_expression : and_expression 
 			| exclusive_or_expression '^' and_expression
@@ -363,7 +371,6 @@ shift_expression	: additive_expression
 			;
 additive_expression	: multiplicative_expression
 			| additive_expression '+' multiplicative_expression 
-			| additive_expression '+' multiplicative_expression 
 			| additive_expression '-' multiplicative_expression
 			;
 multiplicative_expression : unary_expression
@@ -371,35 +378,36 @@ multiplicative_expression : unary_expression
 			| multiplicative_expression '/' unary_expression
 			| multiplicative_expression '%' unary_expression
 			;
-cast_expression		: '(' primitive_type ')' unary_expression 
-			| '(' reference_type ')' unary_expression_not_plus_minus 
+cast_expression		: '(' primitive_type ')' unary_expression %prec CAST
+			| '(' reference_type ')' unary_expression_not_plus_minus %prec CAST 
 			;
 unary_expression	: preincrement_expression 
 			| predecrement_expression
-			| '+' unary_expression %prec UPOS
-			| '-' unary_expression %prec UNEG
+			| '+' unary_expression %prec UMINUS
+			| '-' unary_expression %prec UMINUS
 			| unary_expression_not_plus_minus
 			;
-predecrement_expression : '-' '-' unary_expression %prec PREDEC
+predecrement_expression : DEC unary_expression %prec PREDEC
 			;
-preincrement_expression : '+' '+' unary_expression %prec PREINC
+preincrement_expression : INC unary_expression %prec PREINC
 			;
 unary_expression_not_plus_minus : postfix_expression 
 			| '~' unary_expression 
-			| '!' unary_expression 
+			| NOT unary_expression 
 			| cast_expression
-postdecrement_expression: postfix_expression '-' '-' %prec POSTDEC
 			;
-postincrement_expression: postfix_expression '+' '+' %prec POSTINC
+postdecrement_expression: postfix_expression DEC %prec POSTDEC
+			;
+postincrement_expression: postfix_expression INC %prec POSTINC
 			;
 postfix_expression	: primary 
 			| expression_name 
 			| postincrement_expression 
 			| postdecrement_expression
 			;
-method_invocation	: method_name '(' argument_list ')' 
-			| primary '.' identifier '(' argument_list ')' 
-			| SUPER '.' identifier '(' argument_list ')'
+method_invocation	: method_name '(' argument_list_opt ')' 
+			| primary '.' identifier '(' argument_list_opt ')' 
+			| SUPER '.' identifier '(' argument_list_opt ')'
 			;
 field_access		: primary '.' identifier 
 			| SUPER '.' identifier
@@ -411,12 +419,13 @@ primary_no_new_array	: literal
 			| THIS | '(' expression ')' | class_instance_creation_expression 
 			| field_access | method_invocation | array_access
 			;
-class_instance_creation_expression : NEW class_type '(' argument_list ')'
+class_instance_creation_expression : NEW class_type '(' argument_list_opt ')'
 argument_list		: expression 
 			| argument_list ',' expression
 			;
-array_creation_expression : NEW primitive_type dim_exprs dims 
-			| NEW class_or_interface_type dim_exprs dims
+array_creation_expression : NEW primitive_type dim_exprs dims_opt 
+			| NEW class_or_interface_type dim_exprs dims_opt
+			;
 dim_exprs		: dim_expr 
 			| dim_exprs dim_expr
 			;
@@ -458,16 +467,16 @@ integer_literal		: decimal_integer_literal
 			| hex_integer_literal 
 			| octal_integer_literal
 			;
-decimal_integer_literal : decimal_numeral integer_type_suffix
+decimal_integer_literal : decimal_numeral integer_type_suffix_opt
 			;
-hex_integer_literal	: hex_numeral integer_type_suffix
+hex_integer_literal	: hex_numeral integer_type_suffix_opt
 			;
-octal_integer_literal	: octal_numeral integer_type_suffix
+octal_integer_literal	: octal_numeral integer_type_suffix_opt
 			;
 integer_type_suffix	: INT_SUF
 			;
 decimal_numeral		: '0' 
-			| non_zero_digit digits
+			| non_zero_digit digits_opt
 			;
 digits			: digit
 			| digits digit
@@ -489,18 +498,17 @@ octal_numeral		: '0' octal_digit
 			;
 octal_digit		: '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7'
 			;
-floating_point_literal	: digits '.' digits exponent_part float_type_suffix
-		        | '.' digits exponent_part float_type_suffix
-		        | digits exponent_part float_type_suffix
+floating_point_literal	: digits '.' digits_opt exponent_part_opt float_type_suffix_opt
+		        | '.' digits exponent_part_opt float_type_suffix_opt
 			;
 exponent_part		: exponent_indicator signed_integer
 			;
 exponent_indicator	: 'e' | 'E'
 			;
-signed_integer		: sign digits
+signed_integer		: sign_opt digits
 			;
-sign			: '+' %prec UPOS 
-			| '-' %prec UNEG
+sign			: '+' %prec UMINUS
+			| '-' %prec UMINUS 
 			;
 float_type_suffix	: 'f' | 'F' | 'd' | 'D'
 			;
@@ -512,16 +520,43 @@ string_literal		: STR_LIT
 			;
 null_literal		: NULL_LIT
 			;
-/*
-keyword			: ABSTRACT | BOOLEAN | BREAK | BYTE | CASE | CATCH | CHAR | CLASS | CONST 
-			| CONTINUE | DEFAULT | DO | DOUBLE | ELSE | EXTENDS | FINAL | FINALLY 
-			| FLOAT | FOR | GOTO | IF | IMPLEMENTS | IMPORT | INSTANCEOF | INT 
-			| INTERFACE | LONG | NATIVE | NEW | PACKAGE | PRIVATE | PROTECTED | PUBLIC 
-			| RETURN | SHORT | STATIC | SUPER | SWITCH | SYNCHRONIZED | THIS | THROW 
-			| THROWS | TRANSIENT | TRY | VOID | VOLATILE | WHILE
-			;
-*/
 identifier		: ID
+			;
+
+/* Optionals */
+argument_list_opt : argument_list | /* empty */ ;
+block_statements_opt : block_statements | /* empty */ ;
+catches_opt : catches | /* empty */ ;
+class_body_declarations_opt : class_body_declarations | /* empty */ ;
+class_modifiers_opt : class_modifiers | /* empty */ ;
+constructor_modifiers_opt : constructor_modifiers | /* empty */ ;
+digits_opt : digits | /* empty */ ;
+dims_opt : dims | /* empty */ ;
+explicit_constructor_invocation_opt : explicit_constructor_invocation | /* empty */ ;
+exponent_part_opt : exponent_part | /* empty */ ;
+expression_opt : expression | /* empty */ ;
+extends_interfaces_opt : extends_interfaces | /* empty */ ;
+field_modifiers_opt : field_modifiers | /* empty */ ;
+float_type_suffix_opt : float_type_suffix | /* empty */ ;
+for_init_opt : for_init | /* empty */ ;
+for_update_opt : for_update | /* empty */ ;
+formal_parameter_list_opt : formal_parameter_list | /* empty */ ;
+identifier_opt : identifier | /* empty */ ;
+import_declarations_opt : import_declarations | /* empty */ ;
+integer_type_suffix_opt : integer_type_suffix | /* empty */ ;
+interface_member_declarations_opt : interface_member_declarations | /* empty */ ;
+interface_modifiers_opt : interface_modifiers | /* empty */ ;
+interfaces_opt : interfaces | /* empty */ ;
+method_modifiers_opt : method_modifiers | /* empty */ ;
+package_declaration_opt : package_declaration | /* empty */ ;
+sign_opt : sign | /* empty */ ;
+super_opt : super | /* empty */ ;
+switch_block_statement_groups_opt : switch_block_statement_groups | /* empty */ ;
+switch_labels_opt : switch_labels | /* empty */ ;
+throws_opt : throws | /* empty */ ;
+type_declarations_opt : type_declarations | /* empty */ ;
+variable_initializers_opt : variable_initializers | /* empty */ ;
+
 %%
 
 int main() {
@@ -530,5 +565,6 @@ int main() {
 }
 
 void yyerror() {
-    printf("syntax error at line %d\n", num_lines+1);
+    fprintf(stderr, "syntax error at %3d:%-3d", num_lines, num_chars);
+    fprintf(stderr, " %-10s\n", yytext);
 };
