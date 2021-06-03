@@ -6,52 +6,87 @@
 
 #include "SymbolTable.h"
 
-int create(void) {
-    table = (Node**)malloc(NUM_CHARSET * sizeof(Node*));
-    if (table == NULL) return -1;
+
+Scope* getScope(int level) {
+    int i;
+    Scope* s = root;
+    if (!s) 
+	s = root = newScope();
+    for (i = 0; i < level; i++) {
+	if (!s->next)
+	    s = s->next = newScope();
+	else
+	    s = s->next;
+    }
+    return s;
+}
+Scope* newScope(void) {
+    Scope* s = (Scope*)malloc(sizeof(Scope));
+    s->next = NULL;
+    s->table = (Node**)malloc(NUM_CHARSET * sizeof(Node*));
+    if (s->table == NULL) {
+	perror("newScope(): ");
+	exit(1);
+    }
     int i;
     for (i = 0; i < NUM_CHARSET; i++)
-        table[i] = NULL;
-    return 0;
+        s->table[i] = NULL;
+    return s;
 }
-Node* lookup(const string s) {
-    int hval = hash(s[0]);
-    Node* bucket = table[hval];
+Node* lookup(const Scope* s,const Node* n) {
+    int hval = hash(n->key[0]);
+    Node* bucket = s->table[hval];
     if (bucket)
         do {
-            if (!strcmp(bucket->key, s)) return bucket;
+            if (!strcmp(bucket->key, n->key)) return bucket;
         } while ((bucket=bucket->next));
     return NULL;
 }
 
-Node* insert(const string s) {
-    Node* found = lookup(s);
+Node* insert(const Scope* s,const Node* n) {
+    Node* found = lookup(s, n);
     if (found) return found;
-    int hval = hash(s[0]);
-    Node* bucket = table[hval];
+    int hval = hash(n->key[0]);
+    Node* bucket = s->table[hval];
     if (bucket) {
         while (bucket->next) bucket=bucket->next;
         bucket->next = (Node*)malloc(sizeof(Node));
-        bucket->next->key = strdup(s);
-        bucket->next->next = NULL;
+	bucket->next->key	    = strdup(n->key);
+	bucket->next->value	    = strdup(n->value);
+	bucket->next->type	    = strdup(n->type);
+	bucket->next->occurrence    = n->occurrence;
+	bucket->next->next	    = NULL;
         return bucket->next;
     }
     bucket = (Node*)malloc(sizeof(Node));
-    bucket->key = strdup(s);
-    bucket->next = NULL;
-    table[hval] = bucket;
+    bucket->key		= strdup(n->key);
+    bucket->value	= strdup(n->value);
+    bucket->type	= strdup(n->type);
+    bucket->occurrence	= n->occurrence;
+    bucket->next	= NULL;
+    s->table[hval] = bucket;
     return bucket;
 }
-void dump(void) {
-    printf("The symbol table contains:\n");
-    int i;
-    for (i = 0; i < NUM_CHARSET; i++) {
-        Node* bucket = table[i];
-        if (bucket) {
-            do {
-                printf("%s\n", bucket->key);
-            } while ((bucket=bucket->next));
-        }
+void dump(FILE* os) {
+    fprintf(os, "\nThe symbol table contains:\n");
+    Scope* current = root;
+    int scope = 0;
+    while (current) {
+	fprintf(os, "Scope: %d\n", scope++);
+	fprintf(os, "\tName\tValue\tType\tOccurrence\n");
+	int i;
+	for (i = 0; i < NUM_CHARSET; i++) {
+	    Node* bucket = current->table[i];
+	    if (bucket) {
+		do {
+		    fprintf(os, "\t%s", bucket->key);
+		    fprintf(os, "\t%s", bucket->value);
+		    fprintf(os, "\t%s", bucket->type);
+		    fprintf(os, "\t%d\n", bucket->occurrence);
+		} while ((bucket=bucket->next));
+	    }
+	}
+	current = current->next;
     }
 }
 
@@ -63,15 +98,21 @@ int hash(const char ch) {
 }
 void destroy(void) {
     int i;
-    for (i = 0; i < NUM_CHARSET; i++) {
-        Node* bucket = table[i];
-        if (bucket) {
-            do {
-                Node* next = bucket->next;
-                free(bucket);
-                bucket = next;
-            } while (bucket);
-        }
+    Scope *current = root, *prev = NULL;
+    while (current) {
+	for (i = 0; i < NUM_CHARSET; i++) {
+	    Node* bucket = current->table[i];
+	    if (bucket) {
+		do {
+		    Node* next = bucket->next;
+		    free(bucket);
+		    bucket = next;
+		} while (bucket);
+	    }
+	}
+	free(current->table);
+	free(prev);
+	prev = current;
+	current = current->next;
     }
-    free(table);
 }

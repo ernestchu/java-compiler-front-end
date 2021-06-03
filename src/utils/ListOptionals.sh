@@ -5,5 +5,5 @@ then
     exit 1
 fi
 
-egrep -o '[^ ]+_opt' $1 | sort | uniq \
-| sed 's,\(.*\)_opt,& : \1 | /* empty */ ;,'
+egrep -o '[^ ]+Opt' $1 | sort | uniq \
+| sed 's,\(.*\)Opt,& : \1 | /* empty */ ;,'
