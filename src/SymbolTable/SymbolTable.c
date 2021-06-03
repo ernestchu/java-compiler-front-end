@@ -68,7 +68,7 @@ Node* insert(const Scope* s,const Node* n) {
     return bucket;
 }
 void dump(FILE* os) {
-    fprintf(os, "\nThe symbol table contains:\n");
+    fprintf(os, "\nThe symbol table:\n");
     Scope* current = root;
     int scope = 0;
     while (current) {

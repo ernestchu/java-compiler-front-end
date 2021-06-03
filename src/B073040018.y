@@ -17,11 +17,25 @@
     #include "lex.yy.c"
     #include <stdio.h>
     
-    int yydebug = !!DEBUG;
-    int level	= 0; /* scope level */
+    typedef struct levelStack {
+	int level;
+	struct levelStack* next;
+    } LevelStack;
 
+    int yydebug = !!DEBUG;
+    int levelCounter = 0; /* scope level, only increment */
+    int currentLevel = 0; /* jump back and forth as entering or leaving blocks */
+    LevelStack* levelHead = NULL;
+    
     extern unsigned num_chars, num_lines;
     void yyerror();
+
+    void pushLevel(const int level);
+    int	 popLevel(void);
+    void destroyLevel(void);
+
+    void enterBlock(void);
+    void leaveBlock(void);
 %}
 
 %token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_LIT FLT_LIT ID
@@ -140,7 +154,7 @@ Modifier		    : PUBLIC | PROTECTED | PRIVATE	| STATIC    | ABSTRACT
 ClassDeclaration	    : ModifiersOpt CLASS Identifier 
 			    {
 				Node n = { strdup($3), "class", "", 0, NULL }; 
-				insert(getScope(level), &n); 
+				insert(getScope(currentLevel), &n); 
 				free(n.key);
 			    }
 			      SuperOpt InterfacesOpt ClassBody
@@ -152,7 +166,7 @@ Interfaces		    : IMPLEMENTS InterfaceTypeList
 InterfaceTypeList	    : InterfaceType
 			    | InterfaceTypeList ',' InterfaceType
 			    ;
-ClassBody		    : '{' { level++; } ClassBodyDeclarationsOpt { level--; } '}'
+ClassBody		    : '{' { enterBlock(); } ClassBodyDeclarationsOpt { leaveBlock(); } '}'
 			    ;
 ClassBodyDeclarations	    : ClassBodyDeclaration
 			    | ClassBodyDeclarations ClassBodyDeclaration
@@ -179,7 +193,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 					0, 
 					NULL 
 				    }; 
-				    insert(getScope(level), &n); 
+				    insert(getScope(currentLevel), &n); 
 				    free(n.key); free(n.value); free(n.type);
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
@@ -209,7 +223,7 @@ MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
 				    0, 
 				    NULL 
 				}; 
-				insert(getScope(level), &n); 
+				insert(getScope(currentLevel), &n); 
 				free(n.key); free(n.type);
 			    }
 			    | ModifiersOpt VOID MethodDeclarator ThrowsOpt
@@ -221,7 +235,7 @@ MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
 				    0, 
 				    NULL 
 				}; 
-				insert(getScope(level), &n); 
+				insert(getScope(currentLevel), &n); 
 				free(n.key); free(n.type);
 			    }
 			    ;
@@ -234,7 +248,7 @@ FormalParameterList	    : FormalParameter
 FormalParameter		    : Type VariableDeclaratorId
 			    {
 				Node n = { strdup($2), "", strdup($1), 0, NULL }; 
-				insert(getScope(level), &n); 
+				insert(getScope(currentLevel), &n); 
 				free(n.key); free(n.type);
 			    }
 			    ;
@@ -256,7 +270,7 @@ ConstructorDeclaration	    : ModifiersOpt ConstructorDeclarator ThrowsOpt Constr
 			    ;
 ConstructorDeclarator	    : SimpleName '(' FormalParameterListOpt ')'
 			    ;
-ConstructorBody		    : '{' ExplicitConstructorInvocationOpt BlockStatementsOpt '}'
+ConstructorBody		    : '{' { enterBlock(); } ExplicitConstructorInvocationOpt BlockStatementsOpt { leaveBlock(); } '}'
 			    ;
 ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 			    | SUPER '(' ArgumentListOpt ')' ';'
@@ -265,7 +279,7 @@ ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
 			    {
 				Node n = { strdup($3), "interface", "", 0, NULL }; 
-				insert(getScope(level), &n); 
+				insert(getScope(currentLevel), &n); 
 				free(n.key);
 			    }
 			      ExtendsInterfacesOpt InterfaceBody
@@ -273,7 +287,7 @@ InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
 ExtendsInterfaces	    : EXTENDS InterfaceType
 			    | ExtendsInterfaces ',' InterfaceType
 			    ;
-InterfaceBody		    : '{' InterfaceMemberDeclarationsOpt '}'
+InterfaceBody		    : '{' { enterBlock(); } InterfaceMemberDeclarationsOpt { leaveBlock(); } '}'
 			    ;
 InterfaceMemberDeclarations : InterfaceMemberDeclaration
 			    | InterfaceMemberDeclarations InterfaceMemberDeclaration
@@ -295,7 +309,7 @@ VariableInitializers	    : VariableInitializer
 			    ;
 
 /* Blocks and Statements */
-Block			    : '{' BlockStatementsOpt '}'
+Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
 			    ;
 BlockStatements		    : BlockStatement
 			    | BlockStatements BlockStatement
@@ -318,7 +332,7 @@ LocalVariableDeclaration    : Type VariableDeclarators
 					0, 
 					NULL 
 				    }; 
-				    insert(getScope(level), &n); 
+				    insert(getScope(currentLevel), &n); 
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				    free(n.key); free(n.value); free(n.type);
 				}
@@ -593,6 +607,8 @@ int main() {
 	dump(stderr);
     /* free symbol table */
     destroy();
+    /* free level stack */
+    destroyLevel();
     return 0;
 }
 
@@ -607,3 +623,42 @@ void yyerror() {
     fprintf(stderr, "parsing error: `%s`", yytext);
     fprintf(stderr, "\033[22m");
 };
+
+void pushLevel(const int level) {
+    if (levelHead) {
+	LevelStack* temp = (LevelStack*)malloc(sizeof(LevelStack));
+	temp->level = level;
+	temp->next  = levelHead;
+	levelHead   = temp;
+	return;
+    }
+    levelHead = (LevelStack*)malloc(sizeof(LevelStack));
+    levelHead->level = level;
+    levelHead->next  = NULL;
+}
+
+int popLevel(void) {
+    if (!levelHead) {
+	fprintf(stderr, "Try to pop from a empty stack.\n");
+	exit(1);
+    }
+    LevelStack* temp = levelHead;
+    levelHead = levelHead->next;
+    int level = temp->level;
+    free(temp);
+    return level;
+}
+
+void destroyLevel(void) {
+    while(levelHead)
+	popLevel();
+}
+
+void enterBlock(void) { 
+    pushLevel(currentLevel);
+    currentLevel = ++levelCounter;
+} 
+
+void leaveBlock(void) { 
+    currentLevel = popLevel(); 
+} 
