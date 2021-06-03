@@ -88,40 +88,40 @@ volatile		    { handler();  return VOLATILE;     }
 while	    		    { handler();  return WHILE;        }
 
 "="             	    { /* assignment operator */
-			      handler();  return ASS;	      }
+			      handler();  return ASS;	       }
 "*="            	    { handler();  return MUL_ASS;      }
 "/="            	    { handler();  return DIV_ASS;      }
 "%="            	    { handler();  return MOD_ASS;      }
 "+="            	    { handler();  return ADD_ASS;      }
 "-="            	    { handler();  return SUB_ASS;      }
-"<<="           	    { handler();  return LS_ASS;	      }
-">>="           	    { handler();  return RS_ASS;	      }
+"<<="           	    { handler();  return LS_ASS;       }
+">>="           	    { handler();  return RS_ASS;       }
 ">>>="          	    { handler();  return URS_ASS;      }
 "&="            	    { handler();  return EMP_ASS;      }
 "^="            	    { handler();  return XOR_ASS;      }
-"|="            	    { handler();  return OR_ASS;	      }
+"|="            	    { handler();  return OR_ASS;       }
 
 "<<"            	    { /* shift */
-                	      handler();  return LS;	      }
-">>"            	    { handler();  return RS; 	      }
-">>>"           	    { handler();  return URS;	      }
+                	      handler();  return LS;	       }
+">>"            	    { handler();  return RS; 	       }
+">>>"           	    { handler();  return URS;	       }
 
 "=="            	    { /* relational operator (noted for `=`, for the sack of the longest match rule) */
-                	      handler();  return EQ;	      }
-"!="            	    { handler();  return NE;	      }
-"<="            	    { handler();  return LE;  	      }
-">="            	    { handler();  return GE;  	      }
-"<"             	    { handler();  return LT;  	      }
-">"             	    { handler();  return GT;  	      }
+                	      handler();  return EQ;	       }
+"!="            	    { handler();  return NE;	       }
+"<="            	    { handler();  return LE;  	       }
+">="            	    { handler();  return GE;  	       }
+"<"             	    { handler();  return LT;  	       }
+">"             	    { handler();  return GT;  	       }
 
 "&&"            	    { /* logical operator */
-                	      handler();  return AND;	      }
-"||"            	    { handler();  return OR;  	      }
-"!"             	    { handler();  return NOT; 	      }
+                	      handler();  return AND;	       }
+"||"            	    { handler();  return OR;  	       }
+"!"             	    { handler();  return NOT; 	       }
 
 "++"			    { /* increment/decrement */
-			      handler();  return INC;	      }
-"--"			    { handler();  return DEC;	      }
+			      handler();  return INC;	       }
+"--"			    { handler();  return DEC;	       }
 
 [&|^~*/%+\-?:.{}[\](),;]    { handler();  return *yytext;      }
 
@@ -132,7 +132,7 @@ while	    		    { handler();  return WHILE;        }
 {StringLiteral}		    { handler();  return STR_LIT;      }
 {IntegerLiteral}	    { handler();  return INT_LIT;      }
 {FloatingPointLiteral}	    { handler();  return FLT_LIT;      }
-{Identifier}		    { handler();  return ID;	      }
+{Identifier}		    { handler();  return ID;	       }
 {Comment}		    {
 			      unsigned int len, i, contain_eol=0;
 			      for (len=1, i=0; yytext[i]; len++, i++) {

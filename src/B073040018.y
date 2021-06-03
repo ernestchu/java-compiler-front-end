@@ -24,8 +24,6 @@
     void yyerror();
 %}
 
-
-
 %token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_LIT FLT_LIT ID
 
 %right ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS
@@ -139,7 +137,13 @@ Modifier		    : PUBLIC | PROTECTED | PRIVATE	| STATIC    | ABSTRACT
 			    ;
 
 /* Class Declaration */
-ClassDeclaration	    : ModifiersOpt CLASS Identifier SuperOpt InterfacesOpt ClassBody
+ClassDeclaration	    : ModifiersOpt CLASS Identifier 
+			    {
+				Node n = { strdup($3), "class", "", 0, NULL }; 
+				insert(getScope(level), &n); 
+				free(n.key);
+			    }
+			      SuperOpt InterfacesOpt ClassBody
 			    ;
 Super			    : EXTENDS ClassType
 			    ;
@@ -148,7 +152,7 @@ Interfaces		    : IMPLEMENTS InterfaceTypeList
 InterfaceTypeList	    : InterfaceType
 			    | InterfaceTypeList ',' InterfaceType
 			    ;
-ClassBody		    : '{' ClassBodyDeclarationsOpt '}'
+ClassBody		    : '{' { level++; } ClassBodyDeclarationsOpt { level--; } '}'
 			    ;
 ClassBodyDeclarations	    : ClassBodyDeclaration
 			    | ClassBodyDeclarations ClassBodyDeclaration
@@ -169,13 +173,14 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				while (variableDeclarator != NULL) {
 				    char* brk2;
 				    Node n = {
-					strtok_r(variableDeclarator, "\n", &brk2), 
-					strtok_r(NULL, "\n", &brk2), 
-					$2, 
+					strdup(strtok_r(variableDeclarator, "\n", &brk2)),
+					strdup(strtok_r(NULL, "\n", &brk2)),
+					strdup($2), 
 					0, 
 					NULL 
 				    }; 
 				    insert(getScope(level), &n); 
+				    free(n.key); free(n.value); free(n.type);
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
@@ -186,7 +191,7 @@ VariableDeclarator	    : VariableDeclaratorId			    { sprintf($$, "%s\n%s", $1,"
 			    | VariableDeclaratorId ASS VariableInitializer  { sprintf($$, "%s\n%s", $1, $3); }
 			    ;
 VariableDeclaratorId	    : Identifier
-			    | VariableDeclaratorId '[' ']'
+			    | VariableDeclaratorId '[' ']'		    { sprintf($$, "%s[]", $1); }
 			    ;
 VariableInitializer	    : Expression
 			    | ArrayInitializer
@@ -197,28 +202,41 @@ MethodDeclaration	    : MethodHeader MethodBody
 			    ;
 MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
 			    {
-				char *key, *type; 
-				key = strtok($3, "\n"); 
-				asprintf(&type, "%s%s", $2, strtok(NULL, "\n")); 
-				Node n = { key, "", type, 0, NULL }; 
+				Node n = {
+				    strdup(strtok($3, "\n")), 
+				    "", 
+				    strdup(strcat($2, strtok(NULL, "\n"))), 
+				    0, 
+				    NULL 
+				}; 
 				insert(getScope(level), &n); 
+				free(n.key); free(n.type);
 			    }
 			    | ModifiersOpt VOID MethodDeclarator ThrowsOpt
 			    {
-				char *key, *type; 
-				key = strtok($3, "\n"); 
-				asprintf(&type, "%s%s", $2, strtok(NULL, "\n")); 
-				Node n = { key, "", type, 0, NULL }; 
+				Node n = {
+				    strdup(strtok($3, "\n")), 
+				    "", 
+				    strdup(strcat($2, strtok(NULL, "\n"))), 
+				    0, 
+				    NULL 
+				}; 
 				insert(getScope(level), &n); 
+				free(n.key); free(n.type);
 			    }
 			    ;
-MethodDeclarator	    : Identifier '(' FormalParameterListOpt ')'	    { sprintf($$, "%s\n(%s)"  , $1, $3); }
-			    | MethodDeclarator '[' ']'			    { sprintf($$, "%s\n(%s)[]", $1, $3); }
+MethodDeclarator	    : Identifier '(' FormalParameterListOpt ')'	    { sprintf($$, "%s\n(%s)" , $1, $3); }
+			    | MethodDeclarator '[' ']'			    { sprintf($$, "%s[]", $1); }
 			    ;
 FormalParameterList	    : FormalParameter
 			    | FormalParameterList ',' FormalParameter	    { sprintf($$, "%s, %s", $1,  $3); }
 			    ;
 FormalParameter		    : Type VariableDeclaratorId
+			    {
+				Node n = { strdup($2), "", strdup($1), 0, NULL }; 
+				insert(getScope(level), &n); 
+				free(n.key); free(n.type);
+			    }
 			    ;
 Throws			    : THROWS ClassTypeList
 			    ;
@@ -244,7 +262,13 @@ ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 			    | SUPER '(' ArgumentListOpt ')' ';'
 
 /* Interface Declaration */
-InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
+InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
+			    {
+				Node n = { strdup($3), "interface", "", 0, NULL }; 
+				insert(getScope(level), &n); 
+				free(n.key);
+			    }
+			      ExtendsInterfacesOpt InterfaceBody
 			    ;
 ExtendsInterfaces	    : EXTENDS InterfaceType
 			    | ExtendsInterfaces ',' InterfaceType
@@ -282,6 +306,23 @@ BlockStatement		    : LocalVariableDeclarationStatement
 LocalVariableDeclarationStatement: LocalVariableDeclaration ';'
 			    ;
 LocalVariableDeclaration    : Type VariableDeclarators
+			    {
+				char* brk1;
+				char* variableDeclarator = strtok_r($2, "\r", &brk1);
+				while (variableDeclarator != NULL) {
+				    char* brk2;
+				    Node n = {
+					strdup(strtok_r(variableDeclarator, "\n", &brk2)), 
+					strdup(strtok_r(NULL, "\n", &brk2)), 
+					strdup($1), 
+					0, 
+					NULL 
+				    }; 
+				    insert(getScope(level), &n); 
+				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
+				    free(n.key); free(n.value); free(n.type);
+				}
+			    }    
 			    ;
 Statement		    : StatementWithoutTrailingSubstatement
 			    | LabeledStatement

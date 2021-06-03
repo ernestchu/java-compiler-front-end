@@ -72,17 +72,19 @@ void dump(FILE* os) {
     Scope* current = root;
     int scope = 0;
     while (current) {
-	fprintf(os, "Scope: %d\n", scope++);
-	fprintf(os, "\tName\tValue\tType\tOccurrence\n");
 	int i;
+	for (i = 0; i < 20*4; i++) fprintf(os, "-"); fprintf(os, "\n");
+	fprintf(os, "Scope: %d\n", scope++);
+	fprintf(os, "%20s%20s%20s%20s\n", "Name", "Value", "Type", "Occurrence");
+	for (i = 0; i < 20*4; i++) fprintf(os, "-"); fprintf(os, "\n");
 	for (i = 0; i < NUM_CHARSET; i++) {
 	    Node* bucket = current->table[i];
 	    if (bucket) {
 		do {
-		    fprintf(os, "\t%s", bucket->key);
-		    fprintf(os, "\t%s", bucket->value);
-		    fprintf(os, "\t%s", bucket->type);
-		    fprintf(os, "\t%d\n", bucket->occurrence);
+		    fprintf(os, "%20s", bucket->key);
+		    fprintf(os, "%20s", bucket->value);
+		    fprintf(os, "%20s", bucket->type);
+		    fprintf(os, "%20d\n", bucket->occurrence);
 		} while ((bucket=bucket->next));
 	    }
 	}
