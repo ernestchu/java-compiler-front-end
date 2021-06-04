@@ -22,6 +22,7 @@ endif
 .PHONY: all
 all: clean $(LEX).c $(YACC).c $(STT).c
 	$(CC) $(CCF) $(YACC).c $(STT).c -o $(EXEC)
+	rm -f $(LEX).c $(YACC).*
 
 $(LEX).c: $(LT).l $(YACC).h
 	$(LC) $(LT).l
