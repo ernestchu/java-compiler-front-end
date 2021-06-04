@@ -45,7 +45,7 @@ Node* lookup(const Scope* s,const Node* n) {
 
 Node* insert(const Scope* s,const Node* n) {
     Node* found = lookup(s, n);
-    if (found) return found;
+    if (found) return NULL;
     int hval = hash(n->key[0]);
     Node* bucket = s->table[hval];
     if (bucket) {
