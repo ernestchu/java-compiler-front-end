@@ -142,7 +142,6 @@ TypeImportOnDemandDeclaration: IMPORT Name '.' '*' ';'
 			    ;
 TypeDeclaration		    : ClassDeclaration
 			    | InterfaceDeclaration
-			    | ';'
 			    ;
 
 /* Modifiers */
@@ -277,11 +276,12 @@ StaticInitializer	    : STATIC Block
 			    ;
 
 /* Constructor Declarations */
-ConstructorDeclaration	    : ModifiersOpt ConstructorDeclarator ThrowsOpt ConstructorBody
-			    ;
+ConstructorDeclaration	    : ModifiersOpt ConstructorDeclarator ThrowsOpt ConstructorBody { enterBlock(); } /* we need to move it here, see the 4 & 5 lines below */
+			    ;										     /* if we put it after the curly bracket, it'll generates r/r conflict */
 ConstructorDeclarator	    : SimpleName '(' FormalParameterListOpt ')'
 			    ;
-ConstructorBody		    : '{' { enterBlock(); } ExplicitConstructorInvocationOpt BlockStatementsOpt { leaveBlock(); } '}'
+ConstructorBody		    : '{'  ExplicitConstructorInvocation BlockStatementsOpt { leaveBlock(); } '}'    /* HERE. An action generate an empty rule.  */
+			    | '{'  BlockStatementsOpt { leaveBlock(); } '}'				     /* Being '{' 'empty' for those two, Yacc don't know which one to take */
 			    ;
 ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 			    | SUPER '(' ArgumentListOpt ')' ';'
@@ -315,8 +315,10 @@ AbstractMethodDeclaration   : MethodHeader ';'
 			    ;
 
 /* Arrays */
-ArrayInitializer	    : '{' VariableInitializersOpt ',' '}'
-			    | '{' VariableInitializersOpt '}'
+ArrayInitializer	    : '{' VariableInitializers ',' '}'
+			    | '{' VariableInitializers '}'
+			    | '{' ',' '}'
+			    | '{' '}'
 			    ;
 VariableInitializers	    : VariableInitializer
 			    | VariableInitializers ',' VariableInitializer
@@ -404,7 +406,8 @@ IfThenElseStatementNoShortIf: IF '(' Expression ')' StatementNoShortIf ELSE Stat
 			    ;
 SwitchStatement		    : SWITCH '(' Expression ')' SwitchBlock
 			    ;
-SwitchBlock		    : '{' SwitchBlockStatementGroupsOpt SwitchLabelsOpt '}'
+SwitchBlock		    : '{' SwitchBlockStatementGroups SwitchLabelsOpt '}'
+			    | '{' SwitchLabelsOpt '}'
 			    ;
 SwitchBlockStatementGroups  : SwitchBlockStatementGroup
 			    | SwitchBlockStatementGroups SwitchBlockStatementGroup
@@ -414,12 +417,11 @@ SwitchBlockStatementGroup   : SwitchLabels BlockStatements
 SwitchLabels		    : SwitchLabel
 			    | SwitchLabels SwitchLabel
 			    ;
-SwitchLabel		    :
-			    | CASE ConstantExpression ':'
+SwitchLabel		    : CASE ConstantExpression ':'
 			    | DEFAULT ':'
 			    ;
 WhileStatement		    : WHILE '(' Expression ')' Statement
-			    : WHILE '(' error	   ')' Statement 
+			    | WHILE '(' error	   ')' Statement 
 			    ;
 WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
@@ -594,7 +596,6 @@ BlockStatementsOpt : BlockStatements | /* empty */ ;
 CatchesOpt : Catches | /* empty */ ;
 ClassBodyDeclarationsOpt : ClassBodyDeclarations | /* empty */ ;
 DimsOpt : Dims | /* empty */ ;
-ExplicitConstructorInvocationOpt : ExplicitConstructorInvocation | /* empty */ ;
 ExpressionOpt : Expression | /* empty */ ;
 ExtendsInterfacesOpt : ExtendsInterfaces | /* empty */ ;
 ForInitOpt : ForInit | /* empty */ ;
@@ -607,11 +608,9 @@ InterfacesOpt : Interfaces | /* empty */ ;
 ModifiersOpt : Modifiers | /* empty */ ;
 PackageDeclarationOpt : PackageDeclaration | /* empty */ ;
 SuperOpt : Super | /* empty */ ;
-SwitchBlockStatementGroupsOpt : SwitchBlockStatementGroups | /* empty */ ;
 SwitchLabelsOpt : SwitchLabels | /* empty */ ;
 ThrowsOpt : Throws | /* empty */ ;
 TypeDeclarationsOpt : TypeDeclarations | /* empty */ ;
-VariableInitializersOpt : VariableInitializers | /* empty */ ;
 
 %%
 
