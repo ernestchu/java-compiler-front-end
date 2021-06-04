@@ -203,7 +203,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
-			    | ModifiersOpt Type error ';'
+			    | ModifiersOpt Type error ';' { fprintf(stderr, "\033[0;35m\033[1m illgal field declaration \033[0m"); }
 			    ;
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
@@ -326,7 +326,7 @@ VariableInitializers	    : VariableInitializer
 
 /* Blocks and Statements */
 Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
-			    | '{' error '}'
+			    | '{' error '}' { fprintf(stderr, "\033[0;35m\033[1m illegal block \033[0m"); }
 			    ;
 BlockStatements		    : BlockStatement
 			    | BlockStatements BlockStatement
@@ -421,7 +421,7 @@ SwitchLabel		    : CASE ConstantExpression ':'
 			    | DEFAULT ':'
 			    ;
 WhileStatement		    : WHILE '(' Expression ')' Statement
-			    | WHILE '(' error	   ')' Statement 
+			    | WHILE '(' error	   ')' { fprintf(stderr, "\033[0;35m\033[1m illegal expression \033[0m"); } Statement
 			    ;
 WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
