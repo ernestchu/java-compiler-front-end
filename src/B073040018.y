@@ -33,9 +33,11 @@
     void pushLevel(const int level);
     int	 popLevel(void);
     void destroyLevel(void);
+    void methodHeaderInserter(char* two, char* three);
 
     void enterBlock(void);
     void leaveBlock(void);
+
 
     void redefinitionError(const char* id);
 %}
@@ -123,7 +125,14 @@ SimpleName		    : Identifier
 QualifiedName		    : Name '.' Identifier
 
 /* Packages */
-CompilationUnit		    : PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
+CompilationUnit		    : PackageDeclaration ImportDeclarations TypeDeclarations
+			    | ImportDeclarations TypeDeclarations
+			    | PackageDeclaration TypeDeclarations
+			    | TypeDeclarations
+			    | PackageDeclaration ImportDeclarations
+			    | ImportDeclarations
+			    | PackageDeclaration
+			    | /* empty */
 			    ;
 ImportDeclarations	    : ImportDeclaration
 			    | ImportDeclarations ImportDeclaration
@@ -142,7 +151,6 @@ TypeImportOnDemandDeclaration: IMPORT Name '.' '*' ';'
 			    ;
 TypeDeclaration		    : ClassDeclaration
 			    | InterfaceDeclaration
-			    | ';'
 			    ;
 
 /* Modifiers */
@@ -154,14 +162,22 @@ Modifier		    : PUBLIC | PROTECTED | PRIVATE	| STATIC    | ABSTRACT
 			    ;
 
 /* Class Declaration */
-ClassDeclaration	    : ModifiersOpt CLASS Identifier 
-			    {
-				Node n  = { strdup($3), "", "class", 0, NULL }; 
-				void* p = insert(getScope(currentLevel), &n); 
-				if (!p) redefinitionError(n.key);
-				free(n.key);
-			    }
-			      SuperOpt InterfacesOpt ClassBody
+ClassDeclaration	    : Modifiers CLASS Identifier Super Interfaces ClassBody
+			    { Node n  = { strdup($3), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | CLASS Identifier Super Interfaces ClassBody
+			    { Node n  = { strdup($2), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | Modifiers CLASS Identifier Interfaces ClassBody
+			    { Node n  = { strdup($3), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | CLASS Identifier Interfaces ClassBody
+			    { Node n  = { strdup($2), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | Modifiers CLASS Identifier Super ClassBody
+			    { Node n  = { strdup($3), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | CLASS Identifier Super ClassBody
+			    { Node n  = { strdup($2), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | Modifiers CLASS Identifier ClassBody
+			    { Node n  = { strdup($3), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | CLASS Identifier ClassBody
+			    { Node n  = { strdup($2), "", "class", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
 			    ;
 Super			    : EXTENDS ClassType
 			    ;
@@ -170,7 +186,8 @@ Interfaces		    : IMPLEMENTS InterfaceTypeList
 InterfaceTypeList	    : InterfaceType
 			    | InterfaceTypeList ',' InterfaceType
 			    ;
-ClassBody		    : '{' { enterBlock(); } ClassBodyDeclarationsOpt { leaveBlock(); } '}'
+ClassBody		    : '{' { enterBlock(); } ClassBodyDeclarations { leaveBlock(); } '}'
+			    | '{' '}'
 			    ;
 ClassBodyDeclarations	    : ClassBodyDeclaration
 			    | ClassBodyDeclarations ClassBodyDeclaration
@@ -185,7 +202,7 @@ ClassMemberDeclaration	    : FieldDeclaration
 			    ;
 
 /* Field Declarations */
-FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'	    
+FieldDeclaration	    : Modifiers Type VariableDeclarators ';'	    
 			    {
 				char* brk1;
 				char* variableDeclarator = strtok_r($3, "\r", &brk1);
@@ -204,7 +221,27 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
-			    | ModifiersOpt Type error ';'
+			    | Type VariableDeclarators ';'
+			    {
+				char* brk1;
+				char* variableDeclarator = strtok_r($2, "\r", &brk1);
+				while (variableDeclarator != NULL) {
+				    char* brk2;
+				    Node n = {
+					strdup(strtok_r(variableDeclarator, "\n", &brk2)),
+					strdup(strtok_r(NULL, "\n", &brk2)),
+					strdup($1), 
+					0, 
+					NULL 
+				    }; 
+				    void* p = insert(getScope(currentLevel), &n); 
+				    if (!p) redefinitionError(n.key);
+				    free(n.key); free(n.value); free(n.type);
+				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
+				}
+			    }    
+			    | Modifiers Type error ';'
+			    | Type error ';'
 			    ;
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
@@ -222,34 +259,17 @@ VariableInitializer	    : Expression
 /* Method Declarations */
 MethodDeclaration	    : MethodHeader MethodBody
 			    ;
-MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
-			    {
-				Node n = {
-				    strdup(strtok($3, "\n")), 
-				    "", 
-				    strdup(strcat($2, strtok(NULL, "\n"))), 
-				    0, 
-				    NULL 
-				}; 
-				void* p = insert(getScope(currentLevel), &n); 
-				if (!p) redefinitionError(n.key);
-				free(n.key); free(n.type);
-			    }
-			    | ModifiersOpt VOID MethodDeclarator ThrowsOpt
-			    {
-				Node n = {
-				    strdup(strtok($3, "\n")), 
-				    "", 
-				    strdup(strcat($2, strtok(NULL, "\n"))), 
-				    0, 
-				    NULL 
-				}; 
-				void* p = insert(getScope(currentLevel), &n); 
-				if (!p) redefinitionError(n.key);
-				free(n.key); free(n.type);
-			    }
+MethodHeader		    : Modifiers Type MethodDeclarator Throws	    { methodHeaderInserter($2, $3); }
+			    | Type MethodDeclarator Throws		    { methodHeaderInserter($1, $2); } 
+			    | Modifiers Type MethodDeclarator		    { methodHeaderInserter($2, $3); }
+			    | Type MethodDeclarator			    { methodHeaderInserter($1, $2); }
+			    | Modifiers VOID MethodDeclarator Throws	    { methodHeaderInserter($2, $3); }
+			    | VOID MethodDeclarator Throws		    { methodHeaderInserter($1, $2); }
+			    | Modifiers VOID MethodDeclarator		    { methodHeaderInserter($2, $3); }
+			    | VOID MethodDeclarator			    { methodHeaderInserter($1, $2); }
 			    ;
-MethodDeclarator	    : Identifier '(' FormalParameterListOpt ')'	    { sprintf($$, "%s\n(%s)" , $1, $3); }
+MethodDeclarator	    : Identifier '(' FormalParameterList ')'	    { sprintf($$, "%s\n(%s)", $1, $3); }
+			    | Identifier '('  ')'			    { sprintf($$, "%s\n()", $1); }
 			    | MethodDeclarator '[' ']'			    { sprintf($$, "%s[]", $1); }
 			    ;
 FormalParameterList	    : FormalParameter
@@ -277,30 +297,38 @@ StaticInitializer	    : STATIC Block
 			    ;
 
 /* Constructor Declarations */
-ConstructorDeclaration	    : ModifiersOpt ConstructorDeclarator ThrowsOpt ConstructorBody
+ConstructorDeclaration	    : Modifiers ConstructorDeclarator Throws ConstructorBody 
+			    | ConstructorDeclarator Throws ConstructorBody 
+			    | Modifiers ConstructorDeclarator ConstructorBody 
+			    | ConstructorDeclarator ConstructorBody 
 			    ;
-ConstructorDeclarator	    : SimpleName '(' FormalParameterListOpt ')'
+ConstructorDeclarator	    : SimpleName '(' FormalParameterList ')'
+			    | SimpleName '('  ')'
 			    ;
-ConstructorBody		    : '{' { enterBlock(); } ExplicitConstructorInvocationOpt BlockStatementsOpt { leaveBlock(); } '}'
+ConstructorBody		    : '{' { enterBlock(); } ExplicitConstructorInvocation BlockStatements { leaveBlock(); } '}'
+			    | '{' '}'
 			    ;
-ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
-			    | SUPER '(' ArgumentListOpt ')' ';'
+ExplicitConstructorInvocation: THIS '(' ArgumentList ')' ';'
+			    |  THIS '(' ')' ';'
+			    | SUPER '(' ArgumentList ')' ';'
+			    | SUPER '(' ')' ';'
 			    ;
 
 /* Interface Declaration */
-InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
-			    {
-				Node n = { strdup($3), "", "interface", 0, NULL }; 
-				void* p = insert(getScope(currentLevel), &n); 
-				if (!p) redefinitionError(n.key);
-				free(n.key);
-			    }
-			      ExtendsInterfacesOpt InterfaceBody
+InterfaceDeclaration	    : Modifiers INTERFACE Identifier ExtendsInterfaces InterfaceBody
+			    { Node n = { strdup($3), "", "interface", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | INTERFACE Identifier ExtendsInterfaces InterfaceBody
+			    { Node n = { strdup($2), "", "interface", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | Modifiers INTERFACE Identifier InterfaceBody
+			    { Node n = { strdup($3), "", "interface", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
+			    | INTERFACE Identifier InterfaceBody
+			    { Node n = { strdup($2), "", "interface", 0, NULL }; void* p = insert(getScope(currentLevel), &n); if (!p) redefinitionError(n.key); free(n.key); }
 			    ;
 ExtendsInterfaces	    : EXTENDS InterfaceType
 			    | ExtendsInterfaces ',' InterfaceType
 			    ;
-InterfaceBody		    : '{' { enterBlock(); } InterfaceMemberDeclarationsOpt { leaveBlock(); } '}'
+InterfaceBody		    : '{' { enterBlock(); } InterfaceMemberDeclarations { leaveBlock(); } '}'
+			    | '{' '}'
 			    ;
 InterfaceMemberDeclarations : InterfaceMemberDeclaration
 			    | InterfaceMemberDeclarations InterfaceMemberDeclaration
@@ -315,15 +343,18 @@ AbstractMethodDeclaration   : MethodHeader ';'
 			    ;
 
 /* Arrays */
-ArrayInitializer	    : '{' VariableInitializersOpt ',' '}'
-			    | '{' VariableInitializersOpt '}'
+ArrayInitializer	    : '{' VariableInitializers ',' '}'
+			    | '{' ',' '}'
+			    | '{' VariableInitializers '}'
+			    | '{' '}'
 			    ;
 VariableInitializers	    : VariableInitializer
 			    | VariableInitializers ',' VariableInitializer
 			    ;
 
 /* Blocks and Statements */
-Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
+Block			    : '{' { enterBlock(); } BlockStatements { leaveBlock(); } '}'
+			    | '{' '}'
 			    | '{' error '}'
 			    ;
 BlockStatements		    : BlockStatement
@@ -404,7 +435,10 @@ IfThenElseStatementNoShortIf: IF '(' Expression ')' StatementNoShortIf ELSE Stat
 			    ;
 SwitchStatement		    : SWITCH '(' Expression ')' SwitchBlock
 			    ;
-SwitchBlock		    : '{' SwitchBlockStatementGroupsOpt SwitchLabelsOpt '}'
+SwitchBlock		    : '{' SwitchBlockStatementGroups SwitchLabels '}' 
+			    | '{' SwitchLabels '}' 
+			    | '{' SwitchBlockStatementGroups '}' 
+			    | '{' '}' 
 			    ;
 SwitchBlockStatementGroups  : SwitchBlockStatementGroup
 			    | SwitchBlockStatementGroups SwitchBlockStatementGroup
@@ -425,9 +459,23 @@ WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
 DoStatement		    : DO Statement WHILE '(' Expression ')' ';'
 			    ;
-ForStatement		    : FOR '(' ForInitOpt ';' ExpressionOpt ';' ForUpdateOpt ')' Statement
+ForStatement		    : FOR '(' ForInit ';' Expression ';' ForUpdate ')' Statement 
+			    | FOR '(' ';' Expression ';' ForUpdate ')' Statement 
+			    | FOR '(' ForInit ';' ';' ForUpdate ')' Statement 
+			    | FOR '(' ';' ';' ForUpdate ')' Statement 
+			    | FOR '(' ForInit ';' Expression ';' ')' Statement 
+			    | FOR '(' ';' Expression ';' ')' Statement 
+			    | FOR '(' ForInit ';' ';' ')' Statement 
+			    | FOR '(' ';' ';' ')' Statement 
 			    ;
-ForStatementNoShortIf	    : FOR '(' ForInitOpt ';' ExpressionOpt ';' ForUpdateOpt ')' StatementNoShortIf
+ForStatementNoShortIf	    : FOR '(' ForInit ';' Expression ';' ForUpdate ')' StatementNoShortIf 
+			    | FOR '(' ';' Expression ';' ForUpdate ')' StatementNoShortIf 
+			    | FOR '(' ForInit ';' ';' ForUpdate ')' StatementNoShortIf 
+			    | FOR '(' ';' ';' ForUpdate ')' StatementNoShortIf 
+			    | FOR '(' ForInit ';' Expression ';' ')' StatementNoShortIf 
+			    | FOR '(' ';' Expression ';' ')' StatementNoShortIf 
+			    | FOR '(' ForInit ';' ';' ')' StatementNoShortIf 
+			    | FOR '(' ';' ';' ')' StatementNoShortIf
 			    ;
 ForInit			    : StatementExpressionList
 			    | LocalVariableDeclaration
@@ -437,18 +485,22 @@ ForUpdate		    : StatementExpressionList
 StatementExpressionList	    : StatementExpression
 			    | StatementExpressionList ',' StatementExpression
 			    ;
-BreakStatement		    : BREAK IdentifierOpt ';'
+BreakStatement		    : BREAK Identifier ';'
+			    | BREAK ';'
 			    ;
-ContinueStatement	    : CONTINUE IdentifierOpt ';'
+ContinueStatement	    : CONTINUE Identifier ';'
+			    | CONTINUE ';'
 			    ;
-ReturnStatement		    : RETURN ExpressionOpt ';'
+ReturnStatement		    : RETURN Expression ';'
+			    | RETURN ';'
 			    ;
 ThrowStatement		    : THROW Expression ';'
 			    ;
 SynchronizedStatement	    : SYNCHRONIZED '(' Expression ')' Block
 			    ;
 TryStatement		    : TRY Block Catches
-			    | TRY Block CatchesOpt Finally
+			    | TRY Block Catches Finally
+			    | TRY Block Finally
 			    ;
 Catches			    : CatchClause
 			    | Catches CatchClause
@@ -470,13 +522,16 @@ PrimaryNoNewArray	    : Literal
 			    | MethodInvocation
 			    | ArrayAccess
 			    ;
-ClassInstanceCreationExpression: NEW ClassType '(' ArgumentListOpt ')'
+ClassInstanceCreationExpression: NEW ClassType '(' ArgumentList ')'
+			    | NEW ClassType '(' ')'
 			    ;
 ArgumentList		    : Expression
 			    | ArgumentList ',' Expression
 			    ;
-ArrayCreationExpression	    : NEW PrimitiveType DimExprs DimsOpt
-			    | NEW ClassOrInterfaceType DimExprs DimsOpt
+ArrayCreationExpression	    : NEW PrimitiveType DimExprs Dims
+			    | NEW PrimitiveType DimExprs
+			    | NEW ClassOrInterfaceType DimExprs Dims
+			    | NEW ClassOrInterfaceType DimExprs
 			    ;
 DimExprs		    : DimExpr
 			    | DimExprs DimExpr
@@ -489,9 +544,12 @@ Dims			    : '[' ']'
 FieldAccess		    : Primary '.' Identifier
 			    | SUPER '.' Identifier
 			    ;
-MethodInvocation	    : Name '(' ArgumentListOpt ')'
-			    | Primary '.' Identifier '(' ArgumentListOpt ')'
-			    | SUPER '.' Identifier '(' ArgumentListOpt ')'
+MethodInvocation	    : Name '(' ArgumentList ')'
+			    | Name '(' ')'
+			    | Primary '.' Identifier '(' ArgumentList ')'
+			    | Primary '.' Identifier '(' ')'
+			    | SUPER '.' Identifier '(' ArgumentList ')'
+			    | SUPER '.' Identifier '(' ')'
 			    ;
 ArrayAccess		    : Name '[' Expression ']'
 			    | PrimaryNoNewArray '[' Expression ']'
@@ -520,7 +578,8 @@ UnaryExpressionNotPlusMinus : PostfixExpression
 			    | NOT UnaryExpression
 			    | CastExpression
 			    ;
-CastExpression		    : '(' PrimitiveType DimsOpt ')' UnaryExpression %prec CAST
+CastExpression		    : '(' PrimitiveType Dims ')' UnaryExpression %prec CAST
+			    | '(' PrimitiveType ')' UnaryExpression %prec CAST
 			    | '(' Expression ')' UnaryExpressionNotPlusMinus %prec CAST
 			    | '(' Name Dims ')' UnaryExpressionNotPlusMinus %prec CAST
 			    ;
@@ -587,31 +646,6 @@ ConstantExpression	    : Expression
 /* Identifier */
 Identifier		    : ID
 			    ;
-
-/* Optinals */
-ArgumentListOpt : ArgumentList | /* empty */ ;
-BlockStatementsOpt : BlockStatements | /* empty */ ;
-CatchesOpt : Catches | /* empty */ ;
-ClassBodyDeclarationsOpt : ClassBodyDeclarations | /* empty */ ;
-DimsOpt : Dims | /* empty */ ;
-ExplicitConstructorInvocationOpt : ExplicitConstructorInvocation | /* empty */ ;
-ExpressionOpt : Expression | /* empty */ ;
-ExtendsInterfacesOpt : ExtendsInterfaces | /* empty */ ;
-ForInitOpt : ForInit | /* empty */ ;
-ForUpdateOpt : ForUpdate | /* empty */ ;
-FormalParameterListOpt : FormalParameterList | /* empty */ { $$ = ""; };
-IdentifierOpt : Identifier | /* empty */ ;
-ImportDeclarationsOpt : ImportDeclarations | /* empty */ ;
-InterfaceMemberDeclarationsOpt : InterfaceMemberDeclarations | /* empty */ ;
-InterfacesOpt : Interfaces | /* empty */ ;
-ModifiersOpt : Modifiers | /* empty */ ;
-PackageDeclarationOpt : PackageDeclaration | /* empty */ ;
-SuperOpt : Super | /* empty */ ;
-SwitchBlockStatementGroupsOpt : SwitchBlockStatementGroups | /* empty */ ;
-SwitchLabelsOpt : SwitchLabels | /* empty */ ;
-ThrowsOpt : Throws | /* empty */ ;
-TypeDeclarationsOpt : TypeDeclarations | /* empty */ ;
-VariableInitializersOpt : VariableInitializers | /* empty */ ;
 
 %%
 
@@ -687,6 +721,19 @@ void enterBlock(void) {
 void leaveBlock(void) { 
     currentLevel = popLevel(); 
 } 
+
+void methodHeaderInserter(char* two, char* three) {
+    Node n = {
+	strdup(strtok(three, "\n")), 
+	"", 
+	strdup(strcat(two, strtok(NULL, "\n"))), 
+	0, 
+	NULL 
+    }; 
+    void* p = insert(getScope(currentLevel), &n); 
+    if (!p) redefinitionError(n.key);
+    free(n.key); free(n.type);
+}
 
 void redefinitionError(const char* id) {
     char buf[100];
