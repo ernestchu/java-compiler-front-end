@@ -30,7 +30,7 @@ HexIntegerLiteral	    0[xX][0-9a-fA-F]+[lL]?
 OctalIntegerLiteral	    0[0-7]+[lL]?
 IntegerLiteral		    {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}
 
-FloatingPointLiteral	    ({Digits}\.{Digits}?([eE][/+/-]?{Digits})?[fFdD]?)|(\.{Digits}([eE][/+/-]?{Digits})?[fFdD]?)
+FloatingPointLiteral	    ({Digits}\.{Digits}?([eE][/+/-]?{Digits})?[fFdD]?)|(\.{Digits}([eE][\+\-]?{Digits})?[fFdD]?)
 
 Identifier		    ([a-zA-Z_$])([a-zA-Z0-9_$])*
 Comment			    (\/\/.*\n)|(\/\*([^\*]|\*+[^\*\/])*\*+\/)

@@ -130,6 +130,7 @@ ImportDeclarations	    : ImportDeclaration
 			    ;
 TypeDeclarations	    : TypeDeclaration
 			    | TypeDeclarations TypeDeclaration
+			    ;
 PackageDeclaration	    : PACKAGE Name ';'
 			    ;
 ImportDeclaration	    : SingleTypeImportDeclaration
@@ -155,7 +156,7 @@ Modifier		    : PUBLIC | PROTECTED | PRIVATE	| STATIC    | ABSTRACT
 /* Class Declaration */
 ClassDeclaration	    : ModifiersOpt CLASS Identifier 
 			    {
-				Node n  = { strdup($3), "class", "", 0, NULL }; 
+				Node n  = { strdup($3), "", "class", 0, NULL }; 
 				void* p = insert(getScope(currentLevel), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key);
@@ -204,6 +205,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				}
 			    }    
 			    | ModifiersOpt Type error ';'
+			    ;
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
 			    ;
@@ -283,11 +285,12 @@ ConstructorBody		    : '{' { enterBlock(); } ExplicitConstructorInvocationOpt Bl
 			    ;
 ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 			    | SUPER '(' ArgumentListOpt ')' ';'
+			    ;
 
 /* Interface Declaration */
 InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
 			    {
-				Node n = { strdup($3), "interface", "", 0, NULL }; 
+				Node n = { strdup($3), "", "interface", 0, NULL }; 
 				void* p = insert(getScope(currentLevel), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key);
@@ -485,6 +488,7 @@ Dims			    : '[' ']'
 			    ;
 FieldAccess		    : Primary '.' Identifier
 			    | SUPER '.' Identifier
+			    ;
 MethodInvocation	    : Name '(' ArgumentListOpt ')'
 			    | Primary '.' Identifier '(' ArgumentListOpt ')'
 			    | SUPER '.' Identifier '(' ArgumentListOpt ')'
