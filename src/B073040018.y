@@ -28,7 +28,7 @@
     LevelStack* levelHead = NULL;
     
     extern unsigned num_chars, num_lines;
-    void yyerror();
+    void yyerror(const char* s);
 
     void pushLevel(const int level);
     int	 popLevel(void);
@@ -174,6 +174,7 @@ ClassBodyDeclarations	    : ClassBodyDeclaration
 ClassBodyDeclaration	    : ClassMemberDeclaration
 			    | StaticInitializer
 			    | ConstructorDeclaration
+			    | TypeDeclaration
 			    ;
 ClassMemberDeclaration	    : FieldDeclaration
 			    | MethodDeclaration
@@ -198,6 +199,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
+			    | ModifiersOpt Type error ';'
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
 			    ;
@@ -294,6 +296,7 @@ InterfaceMemberDeclarations : InterfaceMemberDeclaration
 			    ;
 InterfaceMemberDeclaration  : ConstantDeclaration
 			    | AbstractMethodDeclaration
+			    | TypeDeclaration
 			    ;
 ConstantDeclaration	    : FieldDeclaration
 			    ;
@@ -310,12 +313,14 @@ VariableInitializers	    : VariableInitializer
 
 /* Blocks and Statements */
 Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
+			    | '{' error '}'
 			    ;
 BlockStatements		    : BlockStatement
 			    | BlockStatements BlockStatement
 			    ;
 BlockStatement		    : LocalVariableDeclarationStatement
 			    | Statement
+			    | TypeDeclaration
 			    ;
 LocalVariableDeclarationStatement: LocalVariableDeclaration ';'
 			    ;
@@ -344,7 +349,6 @@ Statement		    : StatementWithoutTrailingSubstatement
 			    | IfThenElseStatement
 			    | WhileStatement
 			    | ForStatement
-			    | error ';' { yyerrok; }
 			    ;
 StatementNoShortIf	    : StatementWithoutTrailingSubstatement
 			    | LabeledStatementNoShortIf
@@ -403,6 +407,7 @@ SwitchLabel		    :
 			    | DEFAULT ':'
 			    ;
 WhileStatement		    : WHILE '(' Expression ')' Statement
+			    : WHILE '(' error	   ')' Statement 
 			    ;
 WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
@@ -548,7 +553,6 @@ ConditionalOrExpression	    : ConditionalAndExpression
 			    ;
 ConditionalExpression	    : ConditionalOrExpression
 			    | ConditionalOrExpression '?' Expression ':' ConditionalExpression
-			    | error ';' { yyerrok; }
 			    ;
 AssignmentExpression	    : ConditionalExpression
 			    | Assignment
@@ -612,15 +616,15 @@ int main() {
     return 0;
 }
 
-void yyerror() {
+void yyerror(const char* s) {
     fprintf(stderr, "\033[1m");
     fprintf(stderr, "\n%6u:%u: ", num_lines, num_chars);
     fprintf(stderr, "\033[0;31m");
     fprintf(stderr, "\033[1m");
-    fprintf(stderr, "syntax error: ");
+    fprintf(stderr, "%s: ", s);
     fprintf(stderr, "\033[0m");
     fprintf(stderr, "\033[1m");
-    fprintf(stderr, "parsing error: `%s`", yytext);
+    fprintf(stderr, "`%s`", yytext);
     fprintf(stderr, "\033[22m");
 };
 
