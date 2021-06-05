@@ -41,7 +41,7 @@ make DEBUG=1
 
 - **Level 0:** Print the errors and warnings only.
 - **Level 1:** Print the original source code and errors/warnings in the context.
-- **Level 2:** Print the original source code and errors/warnings in the context. This also prints the symbol table.
+- **Level 2:** Same as above but this one also prints the symbol table.
 - **Level 3:** In addition to above, this also prints the entire parsing process. This sets `yydebug=1` in the Yacc source file and generate `y.output`, which contains all of the states and rules.
 
 ## Test
