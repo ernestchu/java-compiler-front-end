@@ -10,7 +10,7 @@ In the structure of a compiler, here's what will be implemented in this work.
 
 - [x] Lexical analysis
 - [x] Syntax analysis
-- [ ] Interpretation
+- [-] Interpretation
 - [ ] Machine independent optimization
 - [ ] Storage assignment
 - [ ] Code generation
@@ -38,8 +38,9 @@ make DEBUG=1
 ```
 
 - **Level 0:** Print the errors and warnings only.
-- **Level 1:** Print the original source code and errors/warnings in the context. This also prints the symbol table.
-- **Level 2:** Print the entire parsing process. This sets `yydebug=1` in the Yacc source file and generate `y.output`, which contains all of the states and rules.
+- **Level 1:** Print the original source code and errors/warnings in the context.
+- **Level 2:** Print the original source code and errors/warnings in the context. This also prints the symbol table.
+- **Level 3:** In addition to above, this also prints the entire parsing process. This sets `yydebug=1` in the Yacc source file and generate `y.output`, which contains all of the states and rules.
 
 ## Test
 

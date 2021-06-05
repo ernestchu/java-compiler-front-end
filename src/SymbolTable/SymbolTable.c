@@ -7,22 +7,24 @@
 #include "SymbolTable.h"
 
 
-Scope* getScope(int level) {
+Scope* getScope(int level, int local) {
     int i;
     Scope* s = root;
     if (!s) 
-	s = root = newScope();
+	s = root = newScope(local);
     for (i = 0; i < level; i++) {
 	if (!s->next)
-	    s = s->next = newScope();
+	    s = s->next = newScope(local);
 	else
 	    s = s->next;
     }
+    if (local>=0) s->local = local;
     return s;
 }
-Scope* newScope(void) {
+Scope* newScope(int local) {
     Scope* s = (Scope*)malloc(sizeof(Scope));
     s->next = NULL;
+    s->local = local;
     s->table = (Node**)malloc(NUM_CHARSET * sizeof(Node*));
     if (s->table == NULL) {
 	perror("newScope(): ");
@@ -33,18 +35,18 @@ Scope* newScope(void) {
         s->table[i] = NULL;
     return s;
 }
-Node* lookup(const Scope* s,const Node* n) {
-    int hval = hash(n->key[0]);
+Node* lookup(const Scope* s,const char* k) {
+    int hval = hash(*k);
     Node* bucket = s->table[hval];
     if (bucket)
         do {
-            if (!strcmp(bucket->key, n->key)) return bucket;
+            if (!strcmp(bucket->key, k)) return bucket;
         } while ((bucket=bucket->next));
     return NULL;
 }
 
 Node* insert(const Scope* s,const Node* n) {
-    Node* found = lookup(s, n);
+    Node* found = lookup(s, n->key);
     if (found) return NULL;
     int hval = hash(n->key[0]);
     Node* bucket = s->table[hval];
@@ -67,6 +69,27 @@ Node* insert(const Scope* s,const Node* n) {
     s->table[hval] = bucket;
     return bucket;
 }
+void dumpUnusedWarning(FILE* os) {
+    Scope* current = root;
+    while (current) {
+	if (!current->local) {
+	    current = current->next;
+	    continue;
+	}
+	int i;
+	for (i = 0; i < NUM_CHARSET; i++) {
+	    Node* bucket = current->table[i];
+	    if (bucket) {
+		do {
+		    if (bucket->occurrence) continue;
+		    fprintf(os, "\033[0;35m\033[1m warning: \033[0m");
+		    fprintf(os, "\033[1munused variable: `%s`\033[22m\n", bucket->key);
+		} while ((bucket=bucket->next));
+	    }
+	}
+	current = current->next;
+    }
+}
 void dump(FILE* os) {
     fprintf(os, "\nThe symbol table:\n");
     Scope* current = root;
@@ -74,7 +97,7 @@ void dump(FILE* os) {
     while (current) {
 	int i;
 	for (i = 0; i < 20*4; i++) fprintf(os, "-"); fprintf(os, "\n");
-	fprintf(os, "Scope: %d\n", scope++);
+	fprintf(os, "Scope: %d%s\n", scope++, ((current->local)? " (local)": ""));
 	fprintf(os, "%20s%20s%20s%20s\n", "Name", "Value", "Type", "Occurrence");
 	for (i = 0; i < 20*4; i++) fprintf(os, "-"); fprintf(os, "\n");
 	for (i = 0; i < NUM_CHARSET; i++) {

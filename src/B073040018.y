@@ -22,7 +22,7 @@
 	struct levelStack* next;
     } LevelStack;
 
-    int yydebug = !!DEBUG;
+    int yydebug = (DEBUG==3);
     int levelCounter = 0; /* scope level, only increment */
     int currentLevel = 0; /* jump back and forth as entering or leaving blocks */
     LevelStack* levelHead = NULL;
@@ -38,6 +38,7 @@
     void leaveBlock(void);
 
     void redefinitionError(const char* id);
+    void registerAccess(const char* id);
 %}
 
 %token ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONTINUE DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN SHORT STATIC SUPER SWITCH SYNCHRONIZED THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE ASS MUL_ASS DIV_ASS MOD_ASS ADD_ASS SUB_ASS LS_ASS RS_ASS URS_ASS EMP_ASS XOR_ASS OR_ASS LS RS URS EQ NE LE GE LT GT AND OR NOT INC DEC BOOL_LIT NULL_LIT CHAR_LIT STR_LIT INT_LIT FLT_LIT ID
@@ -156,7 +157,7 @@ Modifier		    : PUBLIC | PROTECTED | PRIVATE	| STATIC    | ABSTRACT
 ClassDeclaration	    : ModifiersOpt CLASS Identifier 
 			    {
 				Node n  = { strdup($3), "", "class", 0, NULL }; 
-				void* p = insert(getScope(currentLevel), &n); 
+				void* p = insert(getScope(currentLevel, 0), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key);
 			    }
@@ -197,7 +198,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 					0, 
 					NULL 
 				    }; 
-				    void* p = insert(getScope(currentLevel), &n); 
+				    void* p = insert(getScope(currentLevel, 0), &n); 
 				    if (!p) redefinitionError(n.key);
 				    free(n.key); free(n.value); free(n.type);
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
@@ -230,7 +231,7 @@ MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
 				    0, 
 				    NULL 
 				}; 
-				void* p = insert(getScope(currentLevel), &n); 
+				void* p = insert(getScope(currentLevel, 0), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key); free(n.type);
 			    }
@@ -243,12 +244,13 @@ MethodHeader		    : ModifiersOpt Type MethodDeclarator ThrowsOpt
 				    0, 
 				    NULL 
 				}; 
-				void* p = insert(getScope(currentLevel), &n); 
+				void* p = insert(getScope(currentLevel, 0), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key); free(n.type);
 			    }
 			    ;
-MethodDeclarator	    : Identifier '(' FormalParameterListOpt ')'	    { sprintf($$, "%s\n(%s)" , $1, $3); }
+MethodDeclarator	    : Identifier '(' { currentLevel++; } FormalParameterListOpt { currentLevel--; } ')'
+			    { sprintf($$, "%s\n(%s)" , $1, $4); }
 			    | MethodDeclarator '[' ']'			    { sprintf($$, "%s[]", $1); }
 			    ;
 FormalParameterList	    : FormalParameter
@@ -257,7 +259,7 @@ FormalParameterList	    : FormalParameter
 FormalParameter		    : Type VariableDeclaratorId
 			    {
 				Node n = { strdup($2), "", strdup($1), 0, NULL }; 
-				void* p = insert(getScope(currentLevel), &n); 
+				void* p = insert(getScope(currentLevel, 1), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key); free(n.type);
 			    }
@@ -291,7 +293,7 @@ ExplicitConstructorInvocation: THIS '(' ArgumentListOpt ')' ';'
 InterfaceDeclaration	    : ModifiersOpt INTERFACE Identifier
 			    {
 				Node n = { strdup($3), "", "interface", 0, NULL }; 
-				void* p = insert(getScope(currentLevel), &n); 
+				void* p = insert(getScope(currentLevel, 0), &n); 
 				if (!p) redefinitionError(n.key);
 				free(n.key);
 			    }
@@ -350,7 +352,7 @@ LocalVariableDeclaration    : Type VariableDeclarators
 					0, 
 					NULL 
 				    }; 
-				    void* p = insert(getScope(currentLevel), &n); 
+				    void* p = insert(getScope(currentLevel, 1), &n); 
 				    if (!p) redefinitionError(n.key);
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				    free(n.key); free(n.value); free(n.type);
@@ -499,7 +501,7 @@ ArrayAccess		    : Name '[' Expression ']'
 			    | PrimaryNoNewArray '[' Expression ']'
 			    ;
 PostfixExpression	    : Primary
-			    | Name
+			    | Name { registerAccess($1); }
 			    | PostIncrementExpression
 			    | PostDecrementExpression
 			    ;
@@ -618,8 +620,10 @@ int main() {
     if (DEBUG)
 	fprintf(stderr, "%6u  ", 1);
     yyparse();
+    fprintf(stderr, "\n");
+    dumpUnusedWarning(stderr);
 
-    if (DEBUG)
+    if (DEBUG==2||DEBUG==3)
 	dump(stderr);
     /* free symbol table */
     destroy();
@@ -691,4 +695,9 @@ void redefinitionError(const char* id) {
     char buf[100];
     sprintf(buf, "semantic error\nredefinition of `%s`", id);
     yyerror(buf);
+}
+
+void registerAccess(const char* id) {
+    Node* p = lookup(getScope(currentLevel, -1), id); 
+    if (p) p->occurrence++;
 }

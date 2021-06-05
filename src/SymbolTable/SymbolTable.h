@@ -21,14 +21,16 @@ typedef struct node {
 
 typedef struct scope {
     Node** table;
+    int local;
     struct scope* next;
 } Scope;
 
 
-Scope* getScope(int level);
-Scope* newScope(void);
-Node* lookup(const Scope* s,const Node* n);
+Scope* getScope(int level, int local);
+Scope* newScope(int local);
+Node* lookup(const Scope* s,const char* k);
 Node* insert(const Scope* s,const Node* n);
+void dumpUnusedWarning(FILE* os);
 void dump(FILE* os);
 int hash(const char ch);
 void destroy(void);

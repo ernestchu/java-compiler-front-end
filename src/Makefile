@@ -1,7 +1,7 @@
 CC    = gcc# C compiler
 LC    = flex# Lex compiler
 YC    = bison# Yacc compiler
-DEBUG = 0# Debugging flag, level 0, 1, 2
+DEBUG = 0# Debugging flag, level 0, 1, 2, 3
 CCF   = -Wall -DDEBUG=$(DEBUG)# C compiler flag
 YCF   = -dy# Yacc compiler flag
 LL    = -ll -ly# link lib
@@ -12,10 +12,7 @@ YACC  = y.tab# Yacc output
 STT   = SymbolTable/SymbolTable# Symbol table target
 EXEC  = JavaParser
 
-ifeq ($(DEBUG), 1) 
-	YCF = -dy
-endif
-ifeq ($(DEBUG), 2) 
+ifeq ($(DEBUG), 3) 
 	YCF = -dtvy
 endif
 
