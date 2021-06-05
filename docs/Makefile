@@ -20,7 +20,7 @@ purge:
 	-rm -f *.{aux,dvi,log,bbl,blg,brf,fls,toc,thm,out,fdb_latexmk}
 
 watch: $(DOC)
-	fswatch -o $^ | xargs -n1 -I{} make &> /dev/null
+	fswatch -o $^ | xargs -n1 -I{} make > /dev/null
 
 clean: purge
 	-rm -f $(DOC:.tex=.pdf)

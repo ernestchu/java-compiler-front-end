@@ -37,6 +37,7 @@ National Sun Yat-sen University
 
 \begin{document}
 \maketitle
+\newpage
 
 \tableofcontents
 \newpage
@@ -140,7 +141,7 @@ make [DEBUG=<level>]
 \end{lstlisting}
 
 where you can set the optional flag \texttt{DEBUG} to a desired level. If the flag is not provided, then it defaults to level \texttt{0}.
-\subsection{Debug level}
+\subsection{Debugging level}
 The available levels include:
 
 \begin{itemize}
@@ -215,8 +216,109 @@ Other tokens include \texttt{space}, \texttt{new line character} and \texttt{com
 \lstinputlisting[linerange={36-37}]{../src/B073040018.l}
 
 \subsection{Syntax analysis}
+To maximize the power or error detection in Yacc, I've tried to minimize the use of Lex so the parser can identify the error at a critical state. This enables the parser to generate expressive error message instead of only indicating the redundant characters. Still, as mentioned above, the literals were packed into an atomic token in the lexical analysis stage. This prevents, for example, a floating-point prefix \texttt{f} (as in \texttt{float foo = 1.1f;}) from being recognized as an identifier \texttt{f} (as in \texttt{int f;}).
 
+\subsubsection{From BNF to LALR(1)}
+When writing production rules, in addition to follow the given Java grammar, extra modification must also be made. Since Yacc is an LALR(1) parser, a Backus normal form (BNF) grammar cannot be directly applied to our implementation. There are five problems if we want to use Java BNF grammar in Yacc.
+\paragraph{Ambiguous names.}
+Look at a snippet in the original Java BNF grammar.
+
+\lstinputlisting{BNFtoLALR/Problem1.m}
+
+Now, consider the input
+
+\begin{lstlisting}[language=Java]
+class foo { int f() { whichami.
+\end{lstlisting}
+
+When the parser is considering the token \texttt{whichami}, with one token lookahead to \texttt{.} (the dot), it cannot tell whether \texttt{whichami} is a \texttt{package name} that qualifies a \texttt{type name}, as in
+
+\begin{lstlisting}[language=Java]
+class foo { int f() { whichami.type newOBJ; }
+\end{lstlisting}
+
+Or a \texttt{ambiguous name} that qualifies a \texttt{method name}, as in
+
+\begin{lstlisting}[language=Java]
+class foo { int f() { whichami.method(); }
+\end{lstlisting}
+
+\subparagraph{Solution.} We can replace \texttt{PackageName}, \texttt{TypeName}, \texttt{ExpressionName}, \texttt{MethodName}, and \texttt{AmbiguousName} with an single nonterminal \texttt{Name}.
+
+\lstinputlisting[linerange={122-128}]{../src/B073040018.y}
+
+And a later stage of compiler analysis would figure it out the precise role or the names. In other words, this cannot be determinant in the parsing stage.
+
+\paragraph{Various sets of modifiers.}
+Look at a snippet in the original Java BNF grammar.
+\lstinputlisting{BNFtoLALR/Problem2.m}
+The problem is similar to the problem 1, the parser may not be able to determine whether it should reduce the token to a \texttt{field declaration} or a \texttt{method declaration}. Plus, since the number of modifiers can be zero to infinite, a lookahead-1 parser can never make a decision based on the next token.
+\subparagraph{Solution.} Same as above, we delay the decision which set of modifiers should be applied to the later stage of analysis. Again, in other words, the parser cannot determine which set of modifiers is allowed.
+
+\paragraph{Field declaration versus method declaration.}
+After we merged various sets of modifiers into one unique token, the parser still cannot determine whether it is a \texttt{field declaration} or a \texttt{method declaration}. Consider the input
+
+\begin{lstlisting}[language=Java]
+class foo { int whichami
+\end{lstlisting}
+When the parser is considering the token \texttt{int}, with one token lookahead to \texttt{whichami}, it cannot tell whether the following input would be which one of the following
+\begin{lstlisting}[language=Java]
+class foo { int whichami = 0; }
+
+class foo { int whichami(int arg); }
+\end{lstlisting}
+And shifts the \texttt{int} or reduce it to \texttt{ResultType}, respectively.
+
+\subparagraph{Solution.} we can eliminate the \texttt{ResultType} production and have separate alternatives of \texttt{Type} and \texttt{void}.
+
+\lstinputlisting[linerange={229-229,242-242,255-255}]{../src/B073040018.y}
+
+So the parser can proceed to consider \texttt{whichami}, with one token lookahead to \texttt{=} or \texttt{(}, hence being determinant.
+
+\paragraph{Array type or access.}
+Look at a snippet in the original Java BNF grammar.
+\lstinputlisting{BNFtoLALR/Problem4.m}
+Now, consider the input
+\begin{lstlisting}[language=Java]
+class foo { foo() { whichami[
+\end{lstlisting}
+The parser is now considering \texttt{whichami}, with one token lookahead to \texttt{[}. It cannot determine whether this is a variable declaration with type of \texttt{whichami[]}, as in
+\begin{lstlisting}[language=Java]
+class foo { foo() { whichami[] var; } }
+\end{lstlisting}
+Or an array access, as in
+\begin{lstlisting}[language=Java]
+class foo { foo() { whichami[0] = 1; } }
+\end{lstlisting}
+
+\subparagraph{Solution.} we should separate alternatives for \texttt{ArrayType}
+
+\lstinputlisting[linerange={116-119}]{../src/B073040018.y}
+
+So the parser can reduce \texttt{whichami} to \texttt{Name} and proceed to consider \texttt{[}, with one token lookahead to \texttt{]} or \texttt{0}, hence being determinant.
+
+\paragraph{Cast versus parenthesized expression.}
+\lstinputlisting{BNFtoLALR/Problem5.m}
+Consider the following input
+\begin{lstlisting}[language=Java]
+class foo { foo() { super((whichami)
+\end{lstlisting}
+Supposed the parser is considering \texttt{whichami}, with one token lookahead to \texttt{)}. The ambiguity lies between
+\begin{lstlisting}[language=Java]
+class foo { foo() { super((whichami)); }
+
+class foo { foo() { super((whichami)toBeCasted); }
+\end{lstlisting}
+Although few people would parenthesize a single variable, but it is legal. Therefore, the parser cannot decide which one above to take.
+
+\subparagraph{Solution.} The solution is to eliminate the use of the nonterminal \texttt{ReferenceType} in the definition of \texttt{CastExpression}, which requires some reworking of both alternatives to avoid other ambiguities
+\lstinputlisting[linerange={531-534}]{../src/B073040018.y}
+
+\subsubsection{Optionals}
+
+\lstinputlisting[linerange={49-64}]{../src/B073040018.y}
 \section{Screenshots}
+\newpage
 
 \begin{figure}
 \begin{center}
@@ -260,8 +362,5 @@ Other tokens include \texttt{space}, \texttt{new line character} and \texttt{com
 \caption{The output of parsing \texttt{test6.java} with \texttt{DEBUG=1}}
 \label{test1}
 \end{figure}
-
-\newpage
-\bibliography{Citations}
 
 \end{document}
