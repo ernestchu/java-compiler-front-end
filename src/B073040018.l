@@ -13,7 +13,7 @@
     #include <string.h>
     #include "y.tab.h"
 
-    unsigned num_chars = 1, num_lines = 1;
+    unsigned numChars = 1, numLines = 1;
     void handler(void);
 %}
 
@@ -137,38 +137,38 @@ while	    		    { handler();  return WHILE;        }
 			      unsigned int len, i, contain_eol=0;
 			      for (len=1, i=0; yytext[i]; len++, i++) {
 				  if (yytext[i]=='\n') {
-				      num_lines++;
+				      numLines++;
 				      len=1;
 				      contain_eol = 1;
 				      if (DEBUG)
-					  fprintf(stderr, "\n%6u  ", num_lines);
+					  fprintf(stderr, "\n%6u  ", numLines);
 				  }
 				  else
 				      if (DEBUG)
 					  fprintf(stderr, "%c", yytext[i]);
 			      }
 			      if (!contain_eol)
-				  num_chars += yyleng;
+				  numChars += yyleng;
 			      else
-				  num_chars = len;
+				  numChars = len;
 			    }
 {Space}+		    { 
-			      num_chars+=yyleng; 
+			      numChars+=yyleng; 
 			      if (DEBUG)
 				  fprintf(stderr, "%s", yytext);
 			    }
 \n/.|\n			    { 
-			      num_chars=1;
-			      num_lines++; 
+			      numChars=1;
+			      numLines++; 
 			      if (DEBUG)
-				  fprintf(stderr, "%s%6u  ", yytext, num_lines);
+				  fprintf(stderr, "%s%6u  ", yytext, numLines);
 			    }
 .			    {
-			      num_chars += yyleng;
+			      numChars += yyleng;
 			      if (DEBUG)
 				  fprintf(stderr, "%s", yytext);
 			      fprintf(stderr, "\033[1m");
-			      fprintf(stderr, "\n%6u:%u: ", num_lines, num_chars);
+			      fprintf(stderr, "\n%6u:%u: ", numLines, numChars);
 			      fprintf(stderr, "\033[0;31m");
 			      fprintf(stderr, "\033[1m");
 			      fprintf(stderr, "syntax error: ");
@@ -190,5 +190,5 @@ void handler(void) {
     if (DEBUG)
 	fprintf(stderr, "%s", yytext);
     yylval=strdup(yytext); 
-    num_chars+=yyleng;
+    numChars+=yyleng;
 }

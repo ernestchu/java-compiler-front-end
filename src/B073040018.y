@@ -27,8 +27,11 @@
     int currentLevel = 0; /* jump back and forth as entering or leaving blocks */
     LevelStack* levelHead = NULL;
     
-    extern unsigned num_chars, num_lines;
-    void yyerror(const char* s);
+    extern unsigned numChars, numLines;
+    unsigned errNumChars, errNumLines;
+    char* errtext;
+    void yyerror();
+    void printError(const char* err, const char* detail);
 
     void pushLevel(const int level);
     int	 popLevel(void);
@@ -204,7 +207,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
-			    | ModifiersOpt Type error ';' { fprintf(stderr, "\033[0;35m\033[1m illgal field declaration \033[0m"); }
+			    | ModifiersOpt Type error ';' { printError("syntax error", "illgal field declaration"); }
 			    ;
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
@@ -328,7 +331,7 @@ VariableInitializers	    : VariableInitializer
 
 /* Blocks and Statements */
 Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
-			    | '{' error '}' { fprintf(stderr, "\033[0;35m\033[1m illegal block \033[0m"); }
+			    | '{' error '}' { printError("syntax error", "illgal block"); }
 			    ;
 BlockStatements		    : BlockStatement
 			    | BlockStatements BlockStatement
@@ -423,7 +426,7 @@ SwitchLabel		    : CASE ConstantExpression ':'
 			    | DEFAULT ':'
 			    ;
 WhileStatement		    : WHILE '(' Expression ')' Statement
-			    | WHILE '(' error	   ')' { fprintf(stderr, "\033[0;35m\033[1m illegal expression \033[0m"); } Statement
+			    | WHILE '(' error	   ')' { printError("syntax error", "illgal expression"); } Statement
 			    ;
 WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
@@ -632,24 +635,23 @@ int main() {
     return 0;
 }
 
-void yyerror(const char* s) {
-    char* nonconstS = strdup(s);
-    char* err = strtok(nonconstS, "\n");
-    char* id  = strtok(NULL, "\n");
+void yyerror() {
+    errNumLines = numLines;
+    errNumChars = numChars;
+    errtext     = strdup(yytext);
+}
 
-    fprintf(stderr, "\033[1m");
-    fprintf(stderr, "\n%6u:%u: ", num_lines, num_chars);
-    fprintf(stderr, "\033[0;31m");
-    fprintf(stderr, "\033[1m");
+void printError(const char* err, const char* detail) {
+    fprintf(stderr, "\033[1m"); /* bold */
+    fprintf(stderr, "\n%6u:%u: ", errNumLines, errNumChars);
+    fprintf(stderr, "\033[0;31m"); /* red */
+    fprintf(stderr, "\033[1m"); /* bold */
     fprintf(stderr, "%s: ", err);
-    fprintf(stderr, "\033[0m");
-    fprintf(stderr, "\033[1m");
-    if (id)
-	fprintf(stderr, "%s", id);
-    else
-	fprintf(stderr, "`%s`", yytext);
-    fprintf(stderr, "\033[22m");
-    free(nonconstS);
+    fprintf(stderr, "\033[0m"); /* default color */
+    fprintf(stderr, "\033[1m"); /* bold */
+    fprintf(stderr, "%s: `%s`", detail, errtext);
+    fprintf(stderr, "\033[22m"); /* no bold (default weight) */
+    free(errtext);
 };
 
 void pushLevel(const int level) {
@@ -692,9 +694,10 @@ void leaveBlock(void) {
 } 
 
 void redefinitionError(const char* id) {
-    char buf[100];
-    sprintf(buf, "semantic error\nredefinition of `%s`", id);
-    yyerror(buf);
+    errNumLines = numLines;
+    errNumChars = numChars;
+    errtext = strdup(id);
+    printError("semantic error", "redefinition");
 }
 
 void registerAccess(const char* id) {
