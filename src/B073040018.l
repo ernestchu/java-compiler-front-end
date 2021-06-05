@@ -106,7 +106,7 @@ while	    		    { handler();  return WHILE;        }
 ">>"            	    { handler();  return RS; 	       }
 ">>>"           	    { handler();  return URS;	       }
 
-"=="            	    { /* relational operator (noted for `=`, for the sack of the longest match rule) */
+"=="            	    { /* relational operator */
                 	      handler();  return EQ;	       }
 "!="            	    { handler();  return NE;	       }
 "<="            	    { handler();  return LE;  	       }
