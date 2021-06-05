@@ -8,13 +8,15 @@ A Java compiler front end built with
 
 In the structure of a compiler, here's what will be implemented in this work.
 
-- [x] Lexical analysis
-- [x] Syntax analysis
-- [-] Interpretation
-- [ ] Machine independent optimization
-- [ ] Storage assignment
-- [ ] Code generation
-- [ ] Assembly and output
+- ✔️  Lexical analysis
+- ✔️  Syntax analysis
+- ➖ Interpretation
+- ⬜️ Machine independent optimization
+- ⬜️ Storage assignment
+- ⬜️ Code generation
+- ⬜️ Assembly and output
+
+Noted that in the interpretation stage, only redefinition check and unused variable check have been implemented in the work.
 
 ## Prerequisite Knowledge
 
