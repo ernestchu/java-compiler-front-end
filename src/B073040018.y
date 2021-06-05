@@ -207,7 +207,7 @@ FieldDeclaration	    : ModifiersOpt Type VariableDeclarators ';'
 				    variableDeclarator = strtok_r(NULL, "\r", &brk1);
 				}
 			    }    
-			    | ModifiersOpt Type error ';' { printError("syntax error", "illgal field declaration"); }
+			    | ModifiersOpt Type error ';' { printError("syntax error", "illegal field declaration"); }
 			    ;
 VariableDeclarators	    : VariableDeclarator			    /* use \r and \n as delimiter */
 			    | VariableDeclarators ',' VariableDeclarator    { sprintf($$, "%s\r%s", $1, $3); }
@@ -331,7 +331,7 @@ VariableInitializers	    : VariableInitializer
 
 /* Blocks and Statements */
 Block			    : '{' { enterBlock(); } BlockStatementsOpt { leaveBlock(); } '}'
-			    | '{' error '}' { printError("syntax error", "illgal block"); }
+			    | '{' error '}' { printError("syntax error", "illegal block"); }
 			    ;
 BlockStatements		    : BlockStatement
 			    | BlockStatements BlockStatement
@@ -426,7 +426,7 @@ SwitchLabel		    : CASE ConstantExpression ':'
 			    | DEFAULT ':'
 			    ;
 WhileStatement		    : WHILE '(' Expression ')' Statement
-			    | WHILE '(' error	   ')' { printError("syntax error", "illgal expression"); } Statement
+			    | WHILE '(' error	   ')' { printError("syntax error", "illegal expression"); } Statement
 			    ;
 WhileStatementNoShortIf	    : WHILE '(' Expression ')' StatementNoShortIf
 			    ;
