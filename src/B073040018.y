@@ -125,6 +125,7 @@ Name			    : SimpleName
 SimpleName		    : Identifier
 			    ;
 QualifiedName		    : Name '.' Identifier
+			    ;
 
 /* Packages */
 CompilationUnit		    : PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
