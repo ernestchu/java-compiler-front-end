@@ -46,18 +46,20 @@ make DEBUG=1
 
 ## Test
 
-Six testing files are included in the [TestingFiles](src/TestingFiles).
+Six testing files are included in the [TestingFiles](TestingFiles).
 
 ### Testing on a Single File
 
 ```sh
-./JavaParser < TestingFiles/test1.java
+cd src; make DEBUG=1
+./JavaParser < ../TestingFiles/test1.java
 ```
 
 ### Testing all files by Concatenating Them
 
 ```sh
-cat TestingFiles/* | ./JavaParser
+cd src; make DEBUG=1
+cat ../TestingFiles/* | ./JavaParser
 ```
 
 ## Using the Utilities
