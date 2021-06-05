@@ -28,5 +28,5 @@ make purge
 ### Clean everything except `.tex` source
 
 ```sh
-clean
+make clean
 ```
