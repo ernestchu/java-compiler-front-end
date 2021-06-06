@@ -4,17 +4,19 @@ A Java compiler front end built with
 - Lex, compiled by [Flex](https://ftp.gnu.org/old-gnu/Manuals/flex-2.5.4/html_mono/flex.html)
 - Yacc, compiled by [Bison](https://www.gnu.org/software/bison/)
 
+[Written report](docs)
+
 ## What is a Compiler Front End?
 
 In the structure of a compiler, here's what will be implemented in this work.
 
-- ✔️  Lexical analysis
-- ✔️  Syntax analysis
-- ➖ Interpretation
-- ⬜️ Machine independent optimization
-- ⬜️ Storage assignment
-- ⬜️ Code generation
-- ⬜️ Assembly and output
+- <input type="checkbox" checked> Lexical analysis
+- <input type="checkbox" checked> Syntax analysis
+- <input type="checkbox" checked> Interpretation
+- <input type="checkbox" > Machine independent optimization
+- <input type="checkbox" > Storage assignment
+- <input type="checkbox" > Code generation
+- <input type="checkbox" > Assembly and output
 
 Noted that in the interpretation stage, only redefinition check and unused variable check have been implemented in the work.
 
