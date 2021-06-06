@@ -1,5 +1,7 @@
 # Report
 
+[PDF](Report.pdf)
+
 ## Dependency
 
 - [fswatch](https://emcrisostomo.github.io/fswatch/)
@@ -25,7 +27,7 @@ make watch
 make purge
 ```
 
-### Clean everything except `.tex` source
+### Clean all generated files
 
 ```sh
 make clean

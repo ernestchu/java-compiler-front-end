@@ -220,7 +220,7 @@ To maximize the power or error detection in Yacc, I've tried to minimize the use
 
 \subsubsection{From BNF to LALR(1)}
 When writing production rules, in addition to follow the given Java grammar, extra modification must also be made. Since Yacc is an LALR(1) parser, a Backus normal form (BNF) grammar cannot be directly applied to our implementation. There are five problems if we want to use Java BNF grammar in Yacc.
-\paragraph{Ambiguous names.}
+\paragraph{1. Ambiguous names.}
 Look at a snippet in the original Java BNF grammar.
 
 \lstinputlisting{BNFtoLALR/Problem1.m}
@@ -249,13 +249,13 @@ class foo { int f() { whichami.method(); }
 
 And a later stage of compiler analysis would figure it out the precise role or the names. In other words, this cannot be determinant in the parsing stage.
 
-\paragraph{Various sets of modifiers.}
+\paragraph{2. Various sets of modifiers.}
 Look at a snippet in the original Java BNF grammar.
 \lstinputlisting{BNFtoLALR/Problem2.m}
 The problem is similar to the problem 1, the parser may not be able to determine whether it should reduce the token to a \texttt{field declaration} or a \texttt{method declaration}. Plus, since the number of modifiers can be zero to infinite, a lookahead-1 parser can never make a decision based on the next token.
 \subparagraph{Solution.} Same as above, we delay the decision which set of modifiers should be applied to the later stage of analysis. Again, in other words, the parser cannot determine which set of modifiers is allowed.
 
-\paragraph{Field declaration versus method declaration.}
+\paragraph{3. Field declaration versus method declaration.}
 After we merged various sets of modifiers into one unique token, the parser still cannot determine whether it is a \texttt{field declaration} or a \texttt{method declaration}. Consider the input
 
 \begin{lstlisting}[language=Java]
@@ -275,7 +275,7 @@ And shifts the \texttt{int} or reduce it to \texttt{ResultType}, respectively.
 
 So the parser can proceed to consider \texttt{whichami}, with one token lookahead to \texttt{=} or \texttt{(}, hence being determinant.
 
-\paragraph{Array type or access.}
+\paragraph{4. Array type or access.}
 Look at a snippet in the original Java BNF grammar.
 \lstinputlisting{BNFtoLALR/Problem4.m}
 Now, consider the input
@@ -297,7 +297,8 @@ class foo { foo() { whichami[0] = 1; } }
 
 So the parser can reduce \texttt{whichami} to \texttt{Name} and proceed to consider \texttt{[}, with one token lookahead to \texttt{]} or \texttt{0}, hence being determinant.
 
-\paragraph{Cast versus parenthesized expression.}
+\paragraph{5. Cast versus parenthesized expression.}
+The corresponding grammar
 \lstinputlisting{BNFtoLALR/Problem5.m}
 Consider the following input
 \begin{lstlisting}[language=Java]
@@ -314,9 +315,27 @@ Although few people would parenthesize a single variable, but it is legal. There
 \subparagraph{Solution.} The solution is to eliminate the use of the nonterminal \texttt{ReferenceType} in the definition of \texttt{CastExpression}, which requires some reworking of both alternatives to avoid other ambiguities
 \lstinputlisting[linerange={531-534}]{../src/B073040018.y}
 
-\subsubsection{Optionals}
-
+\subsubsection{Precedence \& Associativity}
+Specifying the precedence and the associativity among operators is crucial for eliminating shift-reduce conflict. Following the Java's specification, the associativity can be specified by \texttt{\%right}, \texttt{\%left} or \texttt{\%nonassoc} in the Yacc source file as below.
 \lstinputlisting[linerange={49-64}]{../src/B073040018.y}
+where the precedence is implied in the order of these lines. The latter an associativity rule is specified, the higher precedence the operators get.
+
+Typically, the precedence of a production is determined by the last terminal's precedence. However, in some cases, the terminal itself is insufficient to expressive the proper precedence. For example, the \texttt{-} operator in the production of an unary expression, i.e., \texttt{-} as a negative sign instead of a subtraction operator. At this point, the precedence of the subtration operator is insufficient to express the one for an unary expression, so we can use \texttt{\%prec} followed by a flag defined above, which should be \texttt{UMINUS} in this case. This technique can also be applied to postfix and prefix increment/decrement operators with shared tokens \texttt{++}/\texttt{--}.
+\lstinputlisting[linerange={512-525}]{../src/B073040018.y}
+\subsubsection{Optionals}
+As we would've seen the optional symbols in the Java grammar, which are followed by the question mark \texttt{?}. We will not be able to directly use that notation in the implementation in Yacc since there's no such feature. Instead, in this work, all of the optionals are marked with the prefix of \texttt{Opt}, which can be identify by the script \texttt{ListOptionals.sh} as listed in the section 2.
+\lstinputlisting[language=sh]{../src/utils/ListOptionals.sh}
+This shell script finds all optionals and generates the corresponding production for each.
+\lstinputlisting[linerange={600-619}]{../src/B073040018.y}
+
+\subsection{Semantic analysis}
+The semantic analysis in this work only provides two simple checks, redefinition in the scope and unused variables.
+\subsubsection{Redefinition check}
+The redefinition check can be achieved by the help of a well-designed symbol table. In this work, the scope is recorded by a stack, and each scope has its own dedicated symbol table. The structure can be found in the header file \texttt{SymbolTable.h}.
+\lstinputlisting[linerange={40-63},language=C]{../src/SymbolTable/SymbolTable.h}
+\subsubsection{Unused variable check}
+In order to track the number or access to a symbol, we need to add a column \texttt{Occurrence} in each entry in the symbol table. The \texttt{Occurrence} only increments when a local variable is accessed, e.g., in an expression or at the left-hand side of an assignment statement. Only the method-like blocks are being examined in this work, i.e., the field in a class declaration would not be taken into account.
+
 \section{Screenshots}
 \newpage
 

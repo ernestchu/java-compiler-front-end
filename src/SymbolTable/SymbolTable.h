@@ -44,11 +44,11 @@ static Scope* root = NULL;
  * Root
  * |
  * V
- * Scope 0 -> table[NUM_CHARSET] -> subroot 0 -> node 0 -> node 1 ... -> NULL 
- * |				 |                                        
- * V		    		 -> subroot 1 -> node 0 -> node 1 ... -> NULL 
- * Scope 1	    		 |                                        
- * |		    		 -> subroot 2 -> node 0 -> node 1 ... -> NULL 
+ * Scope 0 -> table[NUM_CHARSET] -> subroot 0 -> node 0 ... -> NULL 
+ * |				 |                              
+ * V		    		 -> subroot 1 -> node 0 ... -> NULL 
+ * Scope 1	    		 |                              
+ * |		    		 -> subroot 2 -> node 0 ... -> NULL 
  * V		    		 .
  * Scope 2	    		 .
  * |		    		 .
