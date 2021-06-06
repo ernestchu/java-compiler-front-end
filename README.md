@@ -83,3 +83,13 @@ In Yacc, we need to define rules for optionals additionally instead of simply us
 ```sh
 ./utils/ListOptionals.sh B073040018.y
 ```
+
+## Known Bugs
+The scope of variables in for statement is not correct. I've tried to solve this by modified the actions in the productions, but it introduces some conflicts. The actions **within** productions actually generate some intermediate empty transitions. This leads to some ambiguities.
+
+```java
+for (int i=0; i < 10; i++) {
+    int foo;
+    /* the variable `i` is not in this scope */
+}
+```
