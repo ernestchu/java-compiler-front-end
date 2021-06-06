@@ -10,13 +10,13 @@ A Java compiler front end built with
 
 In the structure of a compiler, here's what will be implemented in this work.
 
-- <input type="checkbox" checked> Lexical analysis
-- <input type="checkbox" checked> Syntax analysis
-- <input type="checkbox" checked> Interpretation
-- <input type="checkbox" > Machine independent optimization
-- <input type="checkbox" > Storage assignment
-- <input type="checkbox" > Code generation
-- <input type="checkbox" > Assembly and output
+- [x] Lexical analysis
+- [x] Syntax analysis
+- [x] Interpretation
+- [ ] Machine independent optimization
+- [ ] Storage assignment
+- [ ] Code generation
+- [ ] Assembly and output
 
 Noted that in the interpretation stage, only redefinition check and unused variable check have been implemented in the work.
 
