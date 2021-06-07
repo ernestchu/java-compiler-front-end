@@ -332,7 +332,7 @@ This shell script finds all optionals and generates the corresponding production
 The semantic analysis in this work only provides two simple checks, redefinition in the scope and unused variables.
 \subsubsection{Redefinition check}
 The redefinition check can be achieved by the help of a well-designed symbol table. In this work, the scope is recorded by a stack, and each scope has its own dedicated symbol table. The structure can be found in the header file \texttt{SymbolTable.h}.
-\lstinputlisting[linerange={40-63},language=C]{../src/SymbolTable/SymbolTable.h}
+\lstinputlisting[linerange={40-63}]{../src/SymbolTable/SymbolTable.h}
 \subsubsection{Unused variable check}
 In order to track the number or access to a symbol, we need to add a column \texttt{Occurrence} in each entry in the symbol table. The \texttt{Occurrence} only increments when a local variable is accessed, e.g., in an expression or at the left-hand side of an assignment statement. Only the method-like blocks are being examined in this work, i.e., the field in a class declaration would not be taken into account.
 
