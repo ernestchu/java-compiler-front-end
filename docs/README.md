@@ -12,7 +12,7 @@
 ### One time build
 
 ```sh
-make
+make clean all purge
 ```
 
 ### Auto build on file change
