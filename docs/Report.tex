@@ -79,8 +79,8 @@ before computing xy={l=50pt},
 	[test1-6.java]
     ]
     [src
-	[B073040018.l]
-	[B073040018.y]
+	[Scanner.l]
+	[Parser.y]
 	[Makefile]
 	[SymbleTable
 	    [SymbolTable.c]
@@ -102,8 +102,8 @@ before computing xy={l=50pt},
     \end{itemize}
     \item \texttt{src}: source code
     \begin{itemize}
-	\item \texttt{B073040018.l}: Lex code
-	\item \texttt{B073040018.y}: Lex code
+	\item \texttt{Scanner.l}: Lex code
+	\item \texttt{Parser.y}: Yacc code
 	\item \texttt{Makefile}: Compile Lex, Yacc and C source code
 	\item \texttt{SymbolTable}: Symbol table header and implementation using hash table
 	\item \texttt{utils}: Utilities
@@ -178,16 +178,16 @@ For the boolean literal, the accepted words can be either \texttt{true} or \text
 For the null literal, it just accepts \texttt{null}.
 \paragraph{Character literal.}
 For the character literal, the content must be included in two single quotes and it accept any character except \texttt{single quote}, \texttt{new line character}, and \texttt{backslash}. However, the escape sequence is also accepted by the content. See the following Lex source code.
-\lstinputlisting[linerange={23-24}]{../src/B073040018.l}
+\lstinputlisting[linerange={23-24}]{../src/Scanner.l}
 \paragraph{String literal.}
 For the string literal, the content must be included in two double quotes and it accept any characters except \texttt{double quotes}, \texttt{new line characters}, and \texttt{backslashes}. However, the escape sequence is also accepted by the content. See the following Lex source code.
-\lstinputlisting[linerange={25-25}]{../src/B073040018.l}
+\lstinputlisting[linerange={25-25}]{../src/Scanner.l}
 \paragraph{Integer literal.}
 The integer literal can be further decomposed into \texttt{decimal}, \texttt{hexadecimal} and \texttt{octal} integer literals with a shared optional postfix \texttt{l} or \texttt{L}. See the following Lex source code.
-\lstinputlisting[linerange={27-31}]{../src/B073040018.l}
+\lstinputlisting[linerange={27-31}]{../src/Scanner.l}
 \paragraph{Floating-point literal.}
 The floating-point literal accepts the integer literal plus \texttt{decimal point} and \texttt{scientific notation} with an optional postfix \texttt{f} or \texttt{F} for single-precision floating-point and \texttt{d} or \texttt{D} for the double-precision one.
-\lstinputlisting[linerange={33-33}]{../src/B073040018.l}
+\lstinputlisting[linerange={33-33}]{../src/Scanner.l}
 
 \subsubsection{Keywords \& Operators}
 \paragraph{Keywords}
@@ -208,12 +208,12 @@ We also need to capture the operators one by one and pass them as tokens onto th
 \subsubsection{Identifier \& Others}
 \paragraph{Identifier}
 The identifier in Java can start with any Unicode characters except digits and some symbols. However, as mentioned above, only ASCII characters are allowed in this work. As the regular expression goes
-\lstinputlisting[linerange={35-35}]{../src/B073040018.l}
+\lstinputlisting[linerange={35-35}]{../src/Scanner.l}
 
 \paragraph{Others}
 Other tokens include \texttt{space}, \texttt{new line character} and \texttt{comment}. There are recognized so they won't be redundant characters, but they won't be passed onto the next stage, either. The space includes single space characters and tabular characters while the comment allows both C-style (/* */) and C++-style (//) comments. See the regular expressions below.
 
-\lstinputlisting[linerange={36-37}]{../src/B073040018.l}
+\lstinputlisting[linerange={36-37}]{../src/Scanner.l}
 
 \subsection{Syntax analysis}
 To maximize the power or error detection in Yacc, I've tried to minimize the use of Lex so the parser can identify the error at a critical state. This enables the parser to generate expressive error message instead of only indicating the redundant characters. Still, as mentioned above, the literals were packed into an atomic token in the lexical analysis stage. This prevents, for example, a floating-point prefix \texttt{f} (as in \texttt{float foo = 1.1f;}) from being recognized as an identifier \texttt{f} (as in \texttt{int f;}).
@@ -245,7 +245,7 @@ class foo { int f() { whichami.method(); }
 
 \subparagraph{Solution.} We can replace \texttt{PackageName}, \texttt{TypeName}, \texttt{ExpressionName}, \texttt{MethodName}, and \texttt{AmbiguousName} with an single nonterminal \texttt{Name}.
 
-\lstinputlisting[linerange={122-128}]{../src/B073040018.y}
+\lstinputlisting[linerange={122-128}]{../src/Parser.y}
 
 And a later stage of compiler analysis would figure it out the precise role or the names. In other words, this cannot be determinant in the parsing stage.
 
@@ -271,7 +271,7 @@ And shifts the \texttt{int} or reduce it to \texttt{ResultType}, respectively.
 
 \subparagraph{Solution.} we can eliminate the \texttt{ResultType} production and have separate alternatives of \texttt{Type} and \texttt{void}.
 
-\lstinputlisting[linerange={229-229,242-242,255-255}]{../src/B073040018.y}
+\lstinputlisting[linerange={229-229,242-242,255-255}]{../src/Parser.y}
 
 So the parser can proceed to consider \texttt{whichami}, with one token lookahead to \texttt{=} or \texttt{(}, hence being determinant.
 
@@ -293,7 +293,7 @@ class foo { foo() { whichami[0] = 1; } }
 
 \subparagraph{Solution.} we should separate alternatives for \texttt{ArrayType}
 
-\lstinputlisting[linerange={116-119}]{../src/B073040018.y}
+\lstinputlisting[linerange={116-119}]{../src/Parser.y}
 
 So the parser can reduce \texttt{whichami} to \texttt{Name} and proceed to consider \texttt{[}, with one token lookahead to \texttt{]} or \texttt{0}, hence being determinant.
 
@@ -313,20 +313,20 @@ class foo { foo() { super((whichami)toBeCasted); }
 Although few people would parenthesize a single variable, but it is legal. Therefore, the parser cannot decide which one above to take.
 
 \subparagraph{Solution.} The solution is to eliminate the use of the nonterminal \texttt{ReferenceType} in the definition of \texttt{CastExpression}, which requires some reworking of both alternatives to avoid other ambiguities
-\lstinputlisting[linerange={531-534}]{../src/B073040018.y}
+\lstinputlisting[linerange={531-534}]{../src/Parser.y}
 
 \subsubsection{Precedence \& Associativity}
 Specifying the precedence and the associativity among operators is crucial for eliminating shift-reduce conflict. Following the Java's specification, the associativity can be specified by \texttt{\%right}, \texttt{\%left} or \texttt{\%nonassoc} in the Yacc source file as below.
-\lstinputlisting[linerange={49-64}]{../src/B073040018.y}
+\lstinputlisting[linerange={49-64}]{../src/Parser.y}
 where the precedence is implied in the order of these lines. The latter an associativity rule is specified, the higher precedence the operators get.
 
 Typically, the precedence of a production is determined by the last terminal's precedence. However, in some cases, the terminal itself is insufficient to expressive the proper precedence. For example, the \texttt{-} operator in the production of an unary expression, i.e., \texttt{-} as a negative sign instead of a subtraction operator. At this point, the precedence of the subtration operator is insufficient to express the one for an unary expression, so we can use \texttt{\%prec} followed by a flag defined above, which should be \texttt{UMINUS} in this case. This technique can also be applied to postfix and prefix increment/decrement operators with shared tokens \texttt{++}/\texttt{--}.
-\lstinputlisting[linerange={512-525}]{../src/B073040018.y}
+\lstinputlisting[linerange={512-525}]{../src/Parser.y}
 \subsubsection{Optionals}
 As we would've seen the optional symbols in the Java grammar, which are followed by the question mark \texttt{?}. We will not be able to directly use that notation in the implementation in Yacc since there's no such feature. Instead, in this work, all of the optionals are marked with the prefix of \texttt{Opt}, which can be identify by the script \texttt{ListOptionals.sh} as listed in the section 2.
 \lstinputlisting[language=sh]{../src/utils/ListOptionals.sh}
 This shell script finds all optionals and generates the corresponding production for each.
-\lstinputlisting[linerange={600-619}]{../src/B073040018.y}
+\lstinputlisting[linerange={600-619}]{../src/Parser.y}
 
 \subsection{Semantic analysis}
 The semantic analysis in this work only provides two simple checks, redefinition in the scope and unused variables.

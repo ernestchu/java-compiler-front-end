@@ -75,7 +75,7 @@ chmod +x utils/*
 This simply extracts the tokens after the keyword `return` and removes the duplicates.
 
 ```sh
-./utils/ListTokens.sh B073040018.l
+./utils/ListTokens.sh Scanner.l
 ```
 
 ### List Optionals
@@ -83,7 +83,7 @@ This simply extracts the tokens after the keyword `return` and removes the dupli
 In Yacc, we need to define rules for optionals additionally instead of simply using question mark `?`. This extracts all of the optionals and generates the rules.
 
 ```sh
-./utils/ListOptionals.sh B073040018.y
+./utils/ListOptionals.sh Parser.y
 ```
 
 ## Known Bugs

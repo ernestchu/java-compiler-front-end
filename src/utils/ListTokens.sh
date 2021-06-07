@@ -1,7 +1,7 @@
 #!/bin/sh
 if [ $# != 1 ]
 then
-    echo "Usage: $0 file (e.g. B073040018.l)"
+    echo "Usage: $0 file (e.g. Scanner.l)"
     exit 1
 fi
 

@@ -5,8 +5,8 @@ DEBUG = 0# Debugging flag, level 0, 1, 2, 3
 CCF   = -Wall -DDEBUG=$(DEBUG)# C compiler flag
 YCF   = -dy# Yacc compiler flag
 LL    = -ll -ly# link lib
-LT    = B073040018# Lex target
-YT    = B073040018# Yacc target
+LT    = Scanner# Lex target
+YT    = Parser# Yacc target
 LEX   = lex.yy# Lex output
 YACC  = y.tab# Yacc output
 STT   = SymbolTable/SymbolTable# Symbol table target
